@@ -1,5 +1,3 @@
-////
-
 // routers/authRouter.js
 
 const express = require("express");

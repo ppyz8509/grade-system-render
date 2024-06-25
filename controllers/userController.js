@@ -7,10 +7,10 @@ const prisma = require("../models/prisma");
 
 
 exports.createAdmin = async (req, res) => {
-  const { email, name, password } = req.body;
+  const { name, username, password } = req.body;
   try {
     const existingAdmin = await prisma.user.findFirst({
-      where: { email: email },
+      where: { name: username },
     });
 
     if (existingAdmin && existingAdmin.role === 'ADMIN') {
@@ -20,8 +20,8 @@ exports.createAdmin = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const newAdmin = await prisma.user.create({
       data: {
-        email,
         name,
+        username,
         password: hashedPassword,
         role: 'ADMIN',
       },
@@ -47,7 +47,7 @@ exports.getAllAdmins = async (req, res) => {
 };
 
 exports.createUser = async (req, res) => {
-  const { email, name, password, role } = req.body;
+  const { name, username, password, role } = req.body;
   try {
     if (!['ADVISOR', 'COURSE_INSTRUCTOR'].includes(role)) {
       return res.status(400).send('Invalid role');
@@ -56,8 +56,8 @@ exports.createUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await prisma.user.create({
       data: {
-        email,
         name,
+        username,
         password: hashedPassword,
         role,
       },
@@ -84,7 +84,7 @@ exports.deleteUser = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   const { userId } = req.params;
-  const { email, name, role } = req.body;
+  const { name, username, role } = req.body;
   try {
     if (role && !['ADVISOR', 'COURSE_INSTRUCTOR', 'STUDENT'].includes(role)) {
       return res.status(400).send('Invalid role');
@@ -92,7 +92,7 @@ exports.updateUser = async (req, res) => {
 
     const updatedUser = await prisma.user.update({
       where: { id: parseInt(userId, 10) },
-      data: { email, name, role },
+      data: { name, username, role },
     });
     res.status(200).json(updatedUser);
   } catch (error) {
@@ -102,13 +102,13 @@ exports.updateUser = async (req, res) => {
 };
 
 exports.createStudent = async (req, res) => {
-  const { email, name } = req.body;
+  const { name, username } = req.body;
   const advisorId = req.user.id; // Use the advisor's ID from the token
   try {
     const newStudent = await prisma.student.create({
       data: {
-        email,
         name,
+        username,
         advisorId,
       },
     });
