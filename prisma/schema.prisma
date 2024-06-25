@@ -13,28 +13,37 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  ADMIN
+  STUDENT
+  ADVISOR
+  COURSE_INSTRUCTOR
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
   email     String   @unique
   name      String?
-  role      Role     @default(USER)
-  posts     Post[]
+  password  String
+  role      Role     @default(STUDENT)
+  students  Student[] @relation("AdvisorStudents")
+  courses   Course[]  @relation("InstructorCourses")
 }
 
-model Post {
+model Student {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  published Boolean  @default(false)
-  title     String   @db.VarChar(255)
-  author    User?    @relation(fields: [authorId], references: [id])
-  authorId  Int?
+  email     String   @unique
+  name      String?
+  advisor   User     @relation("AdvisorStudents", fields: [advisorId], references: [id])
+  advisorId Int
 }
 
-enum Role {
-  USER
-  ADMIN
-  CourseInstructor
-  Instructor
+model Course {
+  id           Int      @id @default(autoincrement())
+  createdAt    DateTime @default(now())
+  name         String
+  instructor   User     @relation("InstructorCourses", fields: [instructorId], references: [id])
+  instructorId Int
 }

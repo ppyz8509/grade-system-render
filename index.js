@@ -1,18 +1,22 @@
+// 
+
 const express = require("express");
 const dotenv = require("dotenv");
-const prismaClient = require("./db/db");
+const authRouter = require("./routers/authRouter");
+const userRouter = require("./routers/userRouter");
 
 dotenv.config();
 
 const app = express();
+app.use(express.json());
 
-app.get("/", async (req, res) => {
-  const resp = await prismaClient.user.create({
-    data: { email: "test@gmail.com" },
-  });
-  res.send(resp);
-});
+app.use("/api", authRouter);
+app.use("/api", userRouter);
 
+
+app.get("/",(req , res )=>{
+  res.send("test")
+})
 app.listen(3000, () => {
-  console.log("connected 3000");
+  console.log("Server running on port 3000");
 });
