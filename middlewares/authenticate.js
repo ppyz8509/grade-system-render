@@ -1,4 +1,4 @@
-// middlewares/authenticate.js
+//// middlewares/authenticate.js
 
 const jwt = require("jsonwebtoken");
 const prisma = require("../models/prisma");

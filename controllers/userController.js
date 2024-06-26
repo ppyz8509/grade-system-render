@@ -4,21 +4,21 @@ const bcrypt = require("bcryptjs");
 const prisma = require("../models/prisma");
 
 
-
-
+//createAdmin
 exports.createAdmin = async (req, res) => {
   const { name, username, password } = req.body;
+  
   try {
-    const existingAdmin = await prisma.user.findFirst({
-      where: { name: username },
+    const existingAdmin = await prisma.admin.findFirst({
+      where: { username },
     });
 
     if (existingAdmin && existingAdmin.role === 'ADMIN') {
-      return res.status(400).send('Admin with this email already exists');
+      return res.status(400).send('Admin with this username already exists');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newAdmin = await prisma.user.create({
+    const newAdmin = await prisma.admin.create({
       data: {
         name,
         username,
@@ -34,6 +34,7 @@ exports.createAdmin = async (req, res) => {
 };
 
 
+///getAllAdmins
 exports.getAllAdmins = async (req, res) => {
   try {
     const admins = await prisma.user.findMany({
@@ -46,6 +47,27 @@ exports.getAllAdmins = async (req, res) => {
   }
 };
 
+
+///getalluser
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        role: {
+          not: 'ADMIN'
+        }
+      }
+    });
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error.message);
+    res.status(400).json({ error: error.message });
+  }
+};
+
+
+
+//createUser
 exports.createUser = async (req, res) => {
   const { name, username, password, role } = req.body;
   try {
@@ -69,6 +91,8 @@ exports.createUser = async (req, res) => {
   }
 };
 
+
+///deleteUser
 exports.deleteUser = async (req, res) => {
   const { userId } = req.params;
   try {
@@ -81,7 +105,7 @@ exports.deleteUser = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
-
+///updateUser
 exports.updateUser = async (req, res) => {
   const { userId } = req.params;
   const { name, username, role } = req.body;
@@ -101,21 +125,4 @@ exports.updateUser = async (req, res) => {
   }
 };
 
-exports.createStudent = async (req, res) => {
-  const { name, username } = req.body;
-  const advisorId = req.user.id; // Use the advisor's ID from the token
-  try {
-    const newStudent = await prisma.student.create({
-      data: {
-        name,
-        username,
-        advisorId,
-      },
-    });
-    res.status(201).json(newStudent);
-  } catch (error) {
-    console.error("Error creating student:", error.message);
-    res.status(400).json({ error: error.message });
-  }
-};
 

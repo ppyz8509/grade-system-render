@@ -20,24 +20,6 @@ enum Role {
   COURSE_INSTRUCTOR
 }
 
-model User {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  username     String   @unique
-  name      String?
-  password  String
-  role      Role     @default(STUDENT)
-  students  Student[] @relation("AdvisorStudents")
-}
-
-model Student {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  username     String   @unique
-  name      String?
-  advisor   User     @relation("AdvisorStudents", fields: [advisorId], references: [id])
-  advisorId Int
-}
 
 
 model Admin {
@@ -45,6 +27,7 @@ model Admin {
   name     String
   username String   @unique
   password String   
+  role      Role    
 }
 
 model Advisor {
