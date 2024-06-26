@@ -10,7 +10,5 @@ const connectDb = () => {
     console.log(error);
   }
 };
-
 connectDb();
-
 module.exports = prismaClient;

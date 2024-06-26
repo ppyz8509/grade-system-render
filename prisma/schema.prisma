@@ -30,22 +30,25 @@ model Admin {
   role      Role    
 }
 
+
 model Advisor {
   id       Int      @id @default(autoincrement())
   name     String
   username String   @unique
   password String   
-  role     Role     @default(ADVISOR)
+  role     Role     
 }
+
 
 model CourseInstructor {
   id       Int        @id @default(autoincrement())
   name     String
   username String     @unique
   password String     
-  role     Role       @default(COURSE_INSTRUCTOR)
+  role     Role       
   courses  Course[]   // ความสัมพันธ์กับหลักสูตรที่เป็นผู้รับผิดชอบ
 }
+
 
 model Course {
   id                    Int      @id @default(autoincrement())

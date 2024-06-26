@@ -1,5 +1,5 @@
 //// middlewares/authenticate.js
-
+//ยังไม่ได้ใช้
 const jwt = require("jsonwebtoken");
 const prisma = require("../models/prisma");
 
@@ -27,5 +27,6 @@ const authenticate = async (req, res, next) => {
     res.status(401).json({ message: "Please authenticate" });
   }
 };
+
 
 module.exports = authenticate;

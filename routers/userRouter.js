@@ -1,18 +1,35 @@
-// routers/userRouter.js
-
 const express = require("express");
-const { createUser, deleteUser, updateUser, getAllUsers, createAdmin, getAllAdmins } = require("../controllers/userController");
+const router = express.Router();
+const {
+  createAdmin,
+  getAllAdmins,
+  createAdvisor,
+  updateAdvisor,
+  deleteAdvisor,
+  getAllAdvisors,
+  createCourseInstructor,
+  updateCourseInstructor,
+  deleteCourseInstructor,
+  getAllCourseInstructors
+} = require("../controllers/userController");
 const checkRole = require("../middlewares/checkRole");
 //const authenticate = require("../middlewares/authenticate");
-
-const router = express.Router();
-
 //router.use(authenticate); // Ensure all routes are authenticated
 
-router.post("/users", checkRole(['ADMIN']), createUser);
-router.delete("/users/:userId", checkRole(['ADMIN']), deleteUser);
-router.put("/users/:userId", checkRole(['ADMIN']), updateUser);
+///admin sone
 router.post("/createAdmin", createAdmin);
-router.get('/getAllAdmins', getAllAdmins);
-router.get('/getAllUsers', getAllUsers);
+router.get("/getAllAdmins", getAllAdmins);
+router.post("/createAdvisor", checkRole(['ADMIN']), createAdvisor);
+router.get("/getAllAdvisors", checkRole(['ADMIN']), getAllAdvisors);
+router.put("/updateAdvisor/:id", checkRole(['ADMIN']), updateAdvisor);
+router.delete("/deleteAdvisor/:id", checkRole(['ADMIN']), deleteAdvisor);
+router.post("/createCourseInstructor", checkRole(['ADMIN']), createCourseInstructor);
+router.get("/getAllCourseInstructors", checkRole(['ADMIN']), getAllCourseInstructors);
+router.put("/updateCourseInstructor/:id", checkRole(['ADMIN']), updateCourseInstructor);
+router.delete("/deleteCourseInstructor/:id", checkRole(['ADMIN']), deleteCourseInstructor);
+
+
 module.exports = router;
+
+
+

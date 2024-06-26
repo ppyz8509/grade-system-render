@@ -5,10 +5,25 @@ const bcrypt = require("bcryptjs");
 const prisma = require("../models/prisma");
 
 exports.login = async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, role } = req.body;
 
   try {
-    const user = await prisma.user.findUnique({ where: { username } });
+    let user;
+
+    // Choose the database to search based on the user role
+    switch (role) {
+      case 'ADMIN':
+        user = await prisma.admin.findUnique({ where: { username } });
+        break;
+      case 'ADVISOR':
+        user = await prisma.advisor.findUnique({ where: { username } });
+        break;
+      case 'COURSE_INSTRUCTOR':
+        user = await prisma.courseInstructor.findUnique({ where: { username } });
+        break;
+      default:
+        return res.status(401).json({ message: "Invalid role" });
+    }
 
     if (!user) {
       return res.status(401).json({ message: "Invalid username or password" });
@@ -20,7 +35,8 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: "Invalid username or password" });
     }
 
-    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, {
+    // Create token using user id and role
+    const token = jwt.sign({ id: user.id, role: role }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
 
