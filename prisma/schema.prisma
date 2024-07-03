@@ -1,4 +1,4 @@
-// This is your Prisma schema file,
+
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
@@ -25,10 +25,22 @@ model User {
   name     String
   username String   @unique
   password String   
-  role      Role    
+  role      Role   
+  student Studentinfo?
 }
 
+model Studentinfo {
+  id         Int        @id @default(autoincrement())
+  student   User   @relation(fields: [studentId], references: [id])
+  studentId Int    @unique
+  class Class[]
+}
 
+model Class {
+  id         Int        @id @default(autoincrement())
+  year       Int
+  students Studentinfo[]
+}
 // model Admin {
 //   id       Int      @id @default(autoincrement())
 //   name     String

@@ -38,10 +38,10 @@ exports.createUser = async (req, res) => {
 
 
 ///getAllAdmins
-exports.getAllAdmins = async (req, res) => {
+exports.getallUser = async (req, res) => {
   try {
-    const admins = await prisma.admin.findMany({
-      where: { role: 'ADMIN' },
+    const admins = await prisma.user.findMany({
+      where: { role },
     });
     res.status(200).json(admins);
   } catch (error) {
@@ -59,7 +59,7 @@ exports.createAdvisor = async (req, res) => {
 
   try {
     // Check if advisor with the same username already exists
-    const existingAdvisor = await prisma.advisor.findFirst({
+    const existingAdvisor = await prisma.user.findFirst({
       where: { username },
     });
 
@@ -71,7 +71,7 @@ exports.createAdvisor = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create a new advisor
-    const newAdvisor = await prisma.advisor.create({
+    const newAdvisor = await prisma.user.create({
       data: {
         name,
         username,

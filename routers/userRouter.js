@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const {
   createUser,
-  getAllAdmins,
+  getallUser,
   createAdvisor,
   updateAdvisor,
   deleteAdvisor,
@@ -18,7 +18,7 @@ const checkRole = require("../middlewares/checkRole");
 
 ///admin sone
 router.post("/createUser", createUser);
-router.get("/getAllAdmins", getAllAdmins);
+router.get("/getallUser", getallUser);
 router.post("/createAdvisor", checkRole(['ADMIN']), createAdvisor);
 router.get("/getAllAdvisors", checkRole(['ADMIN']), getAllAdvisors);
 router.put("/updateAdvisor/:id", checkRole(['ADMIN']), updateAdvisor);
