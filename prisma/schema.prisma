@@ -20,13 +20,18 @@ enum Role {
   COURSE_INSTRUCTOR
 }
 
+
+
 model User {
   id       Int      @id @default(autoincrement())
   name     String
   username String   @unique
   password String   
-  role      Role    
+  role     Role   
+  year     Int?
+  room     Int?
 }
+
 
 
 // model Admin {
