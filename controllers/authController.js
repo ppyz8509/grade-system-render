@@ -21,6 +21,9 @@ exports.login = async (req, res) => {
       case 'COURSE_INSTRUCTOR':
         user = await prisma.courseInstructor.findUnique({ where: { username } });
         break;
+      case 'STUDENT':
+        user = await prisma.courseInstructor.findUnique({ where: { username } });
+        break;
       default:
         return res.status(401).json({ message: "Invalid role" });
     }
