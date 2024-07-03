@@ -1,38 +1,37 @@
-// controllers/userController.js
+
 
 const bcrypt = require("bcryptjs");
 const prisma = require("../models/prisma");
 
-// createAdmin
-exports.createAdmin = async (req, res) => {
-  const { name, username, password } = req.body;
+exports.createUser = async (req, res) => {
+  const { name, username, password, role } = req.body; // รับค่า role จาก req.body
 
   try {
-    // Check if admin with the same username already exists
-    const existingAdmin = await prisma.admin.findFirst({
+    // Check if a user with the same username already exists
+    const existingUser = await prisma.user.findFirst({
       where: { username },
     });
 
-    if (existingAdmin) {
-      return res.status(400).send('Admin with this username already exists');
+    if (existingUser) {
+      return res.status(400).send('User with this username already exists');
     }
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create a new admin
-    const newAdmin = await prisma.admin.create({
+    // Create a new user with the specified role
+    const newUser = await prisma.user.create({
       data: {
         name,
         username,
         password: hashedPassword,
-        role: 'ADMIN', // Assuming 'ADMIN' role is hardcoded for admin creation
+        role, // ใช้ค่า role ที่ได้รับจาก req.body
       },
     });
 
-    res.status(201).json(newAdmin);
+    res.status(201).json(newUser);
   } catch (error) {
-    console.error("Error creating admin:", error.message);
+    console.error("Error creating user:", error.message);
     res.status(400).json({ error: error.message });
   }
 };
@@ -232,5 +231,3 @@ exports.getAllCourseInstructors = async (req, res) => {
   }
 };
 
-
-///---------------------------------------------------------------------------------------------------------------------------///

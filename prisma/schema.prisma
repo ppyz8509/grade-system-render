@@ -20,9 +20,7 @@ enum Role {
   COURSE_INSTRUCTOR
 }
 
-
-
-model Admin {
+model User {
   id       Int      @id @default(autoincrement())
   name     String
   username String   @unique
@@ -31,13 +29,22 @@ model Admin {
 }
 
 
-model Advisor {
-  id       Int      @id @default(autoincrement())
-  name     String
-  username String   @unique
-  password String   
-  role     Role     
-}
+// model Admin {
+//   id       Int      @id @default(autoincrement())
+//   name     String
+//   username String   @unique
+//   password String   
+//   role      Role    
+// }
+
+
+// model Advisor {
+//   id       Int      @id @default(autoincrement())
+//   name     String
+//   username String   @unique
+//   password String   
+//   role     Role     
+// }
 
 
 model CourseInstructor {

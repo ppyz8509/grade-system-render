@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const {
-  createAdmin,
+  createUser,
   getAllAdmins,
   createAdvisor,
   updateAdvisor,
@@ -17,7 +17,7 @@ const checkRole = require("../middlewares/checkRole");
 //router.use(authenticate); // Ensure all routes are authenticated
 
 ///admin sone
-router.post("/createAdmin", createAdmin);
+router.post("/createUser", createUser);
 router.get("/getAllAdmins", getAllAdmins);
 router.post("/createAdvisor", checkRole(['ADMIN']), createAdvisor);
 router.get("/getAllAdvisors", checkRole(['ADMIN']), getAllAdvisors);
