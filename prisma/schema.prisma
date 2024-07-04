@@ -27,11 +27,25 @@ model User {
   name     String
   username String   @unique
   password String   
-  role     Role   
-  year     Int?
-  room     Int?
-}
+  role     Role 
+  studentInfo    StudentInfo?
 
+}
+ model StudentInfo {
+    id        Int      @id @default(autoincrement())
+    student   User   @relation(fields: [studentsId], references: [id])
+    studentsId Int   @unique
+    studentIdcard   Int
+    year      Int
+    room      Int
+    studentPlan  StudentPlan?
+ }
+
+ model StudentPlan {
+      id        Int      @id @default(autoincrement())
+      student   StudentInfo   @relation(fields: [studentsId], references: [id])
+      studentsId Int   @unique
+ }
 
 
 // model Admin {
