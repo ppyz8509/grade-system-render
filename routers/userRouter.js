@@ -5,6 +5,7 @@ const {
   getallUser,
   updateUser,
   deleteUser,
+  getRole,
   createCourseInstructor,
   updateCourseInstructor,
   deleteCourseInstructor,
@@ -16,6 +17,7 @@ const checkRole = require("../middlewares/checkRole");
 ///admin zone
 router.post("/createUser", createUser);
 router.get("/getallUser", getallUser);
+router.get("/getRole/:role", getRole);
 router.put("/updateUser/:id", checkRole(['ADMIN']), updateUser);
 router.delete("/deleteUser/:id", checkRole(['ADMIN']), deleteUser);
 
