@@ -1,7 +1,8 @@
-
-
 const bcrypt = require("bcryptjs");
 const prisma = require("../models/prisma");
+
+
+
 
 exports.createUser = async (req, res) => {
   const { name, username, password, role } = req.body; // รับค่า role จาก req.body
@@ -13,7 +14,7 @@ exports.createUser = async (req, res) => {
     });
 
     if (existingUser) {
-      return res.status(400).send('User with this username already exists');
+      return res.status(400).send('มีผู้ใช้ที่มีชื่อผู้ใช้นี้อยู่แล้ว');
     }
 
     // Hash the password
@@ -37,65 +38,39 @@ exports.createUser = async (req, res) => {
 };
 
 
-///getAllAdmins
+///getAllUser
 exports.getallUser = async (req, res) => {
   try {
-    const admins = await prisma.user.findMany({
-      where: { role },
-    });
-    res.status(200).json(admins);
+    const users = await prisma.user.findMany();
+    res.status(200).json(users);
   } catch (error) {
-    console.error("Error fetching admins:", error.message);
+    console.error("Error fetching users:", error.message);
     res.status(400).json({ error: error.message });
   }
 };
 
-
-///---------------------------------------------------------------------------------------------------------------------------///
-
-// Create Advisor
-exports.createAdvisor = async (req, res) => {
-  const { name, username, password } = req.body;
-
+// Get All Users
+exports.getAllUsers = async (req, res) => {
   try {
-    // Check if advisor with the same username already exists
-    const existingAdvisor = await prisma.user.findFirst({
-      where: { username },
-    });
-
-    if (existingAdvisor) {
-      return res.status(400).send('Advisor with this username already exists');
-    }
-
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create a new advisor
-    const newAdvisor = await prisma.user.create({
-      data: {
-        name,
-        username,
-        password: hashedPassword,
-        role: 'ADVISOR',
-      },
-    });
-
-    res.status(201).json(newAdvisor);
+    const users = await prisma.user.findMany();
+    res.status(200).json(users);
   } catch (error) {
-    console.error("Error creating advisor:", error.message);
+    console.error("Error fetching users:", error.message);
     res.status(400).json({ error: error.message });
   }
 };
 
-// Update Advisor
-exports.updateAdvisor = async (req, res) => {
+
+
+// Update User
+exports.updateUser = async (req, res) => {
   const { id } = req.params;
   const { name, username, password } = req.body;
 
   try {
     const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
-    const updatedAdvisor = await prisma.advisor.update({
+    const updatedUser = await prisma.user.update({
       where: { id: parseInt(id) },
       data: {
         name,
@@ -104,44 +79,53 @@ exports.updateAdvisor = async (req, res) => {
       },
     });
 
-    res.status(200).json(updatedAdvisor);
+    res.status(200).json({ message: `User with ID ${id} has Update successfully` });
   } catch (error) {
-    console.error("Error updating advisor:", error.message);
+    console.error("Error updating user:", error.message);
     res.status(400).json({ error: error.message });
   }
 };
 
-// Delete Advisor
-exports.deleteAdvisor = async (req, res) => {
+// Delete User
+exports.deleteUser = async (req, res) => {
   const { id } = req.params;
 
   try {
-    await prisma.advisor.delete({
+    await prisma.user.delete({
       where: { id: parseInt(id) },
     });
 
-    res.status(204).send();
+    res.status(200).json({ message: `User with ID ${id} has been deleted successfully` });
   } catch (error) {
-    console.error("Error deleting advisor:", error.message);
-    res.status(400).json({ error: error.message });
-  }
-};
-
-// Get All Advisors
-exports.getAllAdvisors = async (req, res) => {
-  try {
-    const advisors = await prisma.advisor.findMany({
-      where: { role: 'ADVISOR' },
-    });
-    res.status(200).json(advisors);
-  } catch (error) {
-    console.error("Error fetching advisors:", error.message);
+    console.error("Error deleting user:", error.message);
     res.status(400).json({ error: error.message });
   }
 };
 
 
-///---------------------------------------------------------------------------------------------------------------------------///
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // Create Course Instructor

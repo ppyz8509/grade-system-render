@@ -11,4 +11,5 @@ const connectDb = () => {
   }
 };
 connectDb();
+
 module.exports = prismaClient;

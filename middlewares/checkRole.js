@@ -15,13 +15,9 @@ const checkRole = (roles) => {
       let user;
       switch (decoded.role) {
         case 'ADMIN':
-          user = await prisma.admin.findUnique({ where: { id: decoded.id } });
-          break;
         case 'ADVISOR':
-          user = await prisma.advisor.findUnique({ where: { id: decoded.id } });
-          break;
         case 'COURSE_INSTRUCTOR':
-          user = await prisma.courseInstructor.findUnique({ where: { id: decoded.id } });
+          user = await prisma.user.findUnique({ where: { id: decoded.id } });
           break;
         default:
           return res.status(401).json({ message: "Invalid role" });
@@ -39,7 +35,7 @@ const checkRole = (roles) => {
       next();
     } catch (error) {
       console.error("Error checking user role:", error.message);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: "Error checking user role" });
     }
   };
 };
