@@ -6,15 +6,33 @@ exports.createStudent = async (req, res) => {
 
   try {
     // Check if a user with the same username already exists
-    const existingStudent = await prisma.user.findFirst({
+    const existingUser = await prisma.user.findFirst({
       where: { 
         username,
        },
     });
-
-    if (existingStudent) {
-      return res.status(400).send('User with this Student already exists');
+    const existingStudent = await prisma.studentInfo.findFirst({
+      where: { 
+        studentIdcard,
+       },
+    });
+    if (!username) {
+      res.status(400).json({message : "no username"})
+      return;
     }
+
+    if (!password) {
+      res.status(400).json({message : "no password"})
+      return;
+    }
+if (existingUser) {
+   return res.status(400).send('User with this Student already exists');
+} 
+if (existingStudent) {
+  return res.status(400).send('Student ID with this Student already exists');
+} 
+
+
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -29,12 +47,13 @@ exports.createStudent = async (req, res) => {
         studentInfo: {
           create: {year , room, studentIdcard} 
         }
-      },
+      }, include: {studentInfo: true}
     });
+
 
     res.status(201).json(newStudent);
   } catch (error) {
-    console.error("Error creating user:", error.message);
+    console.error("Error creating Student:", error.message);
     res.status(400).json({ error: error.message });
   }
 };

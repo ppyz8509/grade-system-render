@@ -35,7 +35,7 @@ model User {
     id        Int      @id @default(autoincrement())
     student   User   @relation(fields: [studentsId], references: [id])
     studentsId Int   @unique
-    studentIdcard   Int
+    studentIdcard   Int 
     year      Int
     room      Int
     studentPlan  StudentPlan?
