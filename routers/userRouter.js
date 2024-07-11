@@ -6,10 +6,6 @@ const {
   updateUser,
   deleteUser,
   getRole,
-  createCourseInstructor,
-  updateCourseInstructor,
-  deleteCourseInstructor,
-  getAllCourseInstructors
 } = require("../controllers/userController");
 const checkRole = require("../middlewares/checkRole");
 
@@ -18,19 +14,8 @@ const checkRole = require("../middlewares/checkRole");
 router.post("/createUser", createUser);
 router.get("/getallUser", getallUser);
 router.get("/getRole/:role", getRole);
-router.put("/updateUser/:id", checkRole(['ADMIN']), updateUser);
+router.put("/updateUser/:id", updateUser);
 router.delete("/deleteUser/:id", checkRole(['ADMIN']), deleteUser);
-
-
-
-
-
-router.post("/createCourseInstructor", checkRole(['ADMIN']), createCourseInstructor);
-router.get("/getAllCourseInstructors", checkRole(['ADMIN']), getAllCourseInstructors);
-router.put("/updateCourseInstructor/:id", checkRole(['ADMIN']), updateCourseInstructor);
-router.delete("/deleteCourseInstructor/:id", checkRole(['ADMIN']), deleteCourseInstructor);
-
-
 module.exports = router;
 
 

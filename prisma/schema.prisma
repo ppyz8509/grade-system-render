@@ -25,61 +25,50 @@ model User {
   name     String
   username String   @unique
   password String   
-  role      Role   
-  student Studentinfo?
+  role     Role   
+  student  Studentinfo?
 }
 
 model Studentinfo {
-  id         Int        @id @default(autoincrement())
-  student   User   @relation(fields: [studentId], references: [id])
-  studentId Int    @unique
-  class Class[]
+  id        Int        @id @default(autoincrement())
+  student   User       @relation(fields: [studentId], references: [id])
+  studentId Int        @unique
+  class     Class[]
 }
 
 model Class {
-  id         Int        @id @default(autoincrement())
-  year       Int
-  students Studentinfo[]
+  id        Int            @id @default(autoincrement())
+  year      Int
+  students  Studentinfo[]
 }
-// model Admin {
-//   id       Int      @id @default(autoincrement())
-//   name     String
-//   username String   @unique
-//   password String   
-//   role      Role    
-// }
-
-
-// model Advisor {
-//   id       Int      @id @default(autoincrement())
-//   name     String
-//   username String   @unique
-//   password String   
-//   role     Role     
-// }
-
-
-model CourseInstructor {
-  id       Int        @id @default(autoincrement())
-  name     String
-  username String     @unique
-  password String     
-  role     Role       
-  courses  Course[]   // ความสัมพันธ์กับหลักสูตรที่เป็นผู้รับผิดชอบ
-}
-
 
 model Course {
-  id                    Int      @id @default(autoincrement())
-  nameThai              String  ////ชื่อหลักสูตร(ไทย)
-  nameEnglish           String  ////ชื่อหลักสูตร(อังกฤษ)
-  creditUnits           Int     ///หน่วยกิต 128+
-  responsibleInstructor CourseInstructor? @relation(fields: [responsibleInstructorId], references: [id])//บ่งบอกความสัมพันของคอสหน่วยกิต
-  responsibleInstructorId Int?
-  category              String
-  creditUnitsCategory   Int
-  groupCourseThai       String
-  groupCourseEnglish    String
-  semester              String
-  mandatorySubjects     String[]
+  id              Int       @id @default(autoincrement())
+  thaiName        String    // ชื่อหลักสูตรภาษาไทย
+  englishName     String    // ชื่อหลักสูตรภาษาอังกฤษ
+  code            String    @unique // รหัสหลักสูตร
+  year            Int       // ปีของหลักสูตร
+  creditUnits     Int       // จำนวนหน่วยกิต
+  courseInstructor String    // อาจารย์ผู้รับผิดชอบหลักสูตร (ชื่อเท่านั้น)
+  subjects        Subject[]
+}
+
+model Subject {
+  id             Int      @id @default(autoincrement())
+  code           String   // รหัสรายวิชา
+  thaiName       String   // ชื่อรายวิชาภาษาไทย
+  englishName    String   // ชื่อรายวิชาภาษาอังกฤษ
+  compulsory     Boolean  // เป็นรายวิชาบังคับหรือไม่
+  creditPerUnit  Int      // น(ท-ป-ค) หน่วยกิตต่อวิชา
+  course         Course   @relation(fields: [courseId], references: [id])
+  courseId       Int
+  subjectGroup   SubjectGroup? @relation(fields: [subjectGroupId], references: [id])
+  subjectGroupId Int?
+}
+
+model SubjectGroup {
+  id          Int        @id @default(autoincrement())
+  name        String     // ชื่อกลุ่มวิชา
+  creditUnits Int        // จำนวนหน่วยกิตของกลุ่มวิชา
+  subjects    Subject[]  // ระบุความสัมพันธ์ด้วย Subject[]
 }

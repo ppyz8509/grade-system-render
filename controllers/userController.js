@@ -13,20 +13,32 @@ exports.createUser = async (req, res) => {
       where: { username },
     });
 
+    if (!name) {
+      res.status(400).json({ message: "no name" });
+      return;
+    }
+    if (!username) {
+      res.status(400).json({ message: "no username" });
+      return;
+    }
+    if (!password) {
+      res.status(400).json({ message: "no password" });
+      return;
+    }
     if (existingUser) {
-      return res.status(400).send('There is a user who already has this username.');
+      res.status(400).send('There is a user who already has this username.');
+      return;
     }
 
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create a new user with the specified role
+
     const newUser = await prisma.user.create({
       data: {
         name,
         username,
         password: hashedPassword,
-        role, // ใช้ค่า role ที่ได้รับจาก req.body
+        role, 
       },
     });
 
@@ -36,6 +48,7 @@ exports.createUser = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
 
 
 ///getAllUser
@@ -67,7 +80,9 @@ exports.getRole = async (req, res) => {
   try {
       const users = await prisma.user.findMany({
           where: {
-              role: role.toUpperCase() // ตรวจสอบให้แน่ใจว่าบทบาทถูกแปลงเป็นตัวพิมพ์ใหญ่เพื่อให้ตรงกับฐานข้อมูล
+            ////เมธอด toUpperCase() ใช้สำหรับแปลงข้อความให้กลายเป็นตัวพิมพ์ใหญ่ทั้งหมด 
+            ///โดยจะไม่เปลี่ยนแปลงข้อความต้นฉบับแต่จะสร้างข้อความใหม่ที่มีตัวอักษรทั้งหมดเป็นตัวพิมพ์ใหญ่
+              role: role.toUpperCase() 
           }
       });
 
@@ -79,13 +94,12 @@ exports.getRole = async (req, res) => {
 };
 
 
-// Update User   Error fetching users by role:
+// Update User   
 exports.updateUser = async (req, res) => {
   const { id } = req.params;
   const { name, username, password } = req.body;
 
   try {
-    // Check if the user exists
     const existingUser = await prisma.user.findUnique({
       where: { id: parseInt(id) },
     });
@@ -101,7 +115,7 @@ exports.updateUser = async (req, res) => {
       data: {
         name,
         username,
-        password: hashedPassword,
+        password: hashedPassword || existingUser.password, 
       },
     });
 
@@ -114,12 +128,13 @@ exports.updateUser = async (req, res) => {
 
 
 
+
+
 // Delete User
 exports.deleteUser = async (req, res) => {
   const { id } = req.params;
 
   try {
-    // Check if the user exists before deleting
     const existingUser = await prisma.user.findUnique({
       where: { id: parseInt(id) },
     });
