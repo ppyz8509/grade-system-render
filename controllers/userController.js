@@ -1,7 +1,8 @@
-
-
 const bcrypt = require("bcryptjs");
 const prisma = require("../models/prisma");
+
+
+
 
 exports.createUser = async (req, res) => {
   const { name, username, password, role } = req.body; // รับค่า role จาก req.body
@@ -12,20 +13,32 @@ exports.createUser = async (req, res) => {
       where: { username },
     });
 
+    if (!name) {
+      res.status(400).json({ message: "no name" });
+      return;
+    }
+    if (!username) {
+      res.status(400).json({ message: "no username" });
+      return;
+    }
+    if (!password) {
+      res.status(400).json({ message: "no password" });
+      return;
+    }
     if (existingUser) {
-      return res.status(400).send('User with this username already exists');
+      res.status(400).send('There is a user who already has this username.');
+      return;
     }
 
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create a new user with the specified role
+
     const newUser = await prisma.user.create({
       data: {
         name,
         username,
         password: hashedPassword,
-        role, // ใช้ค่า role ที่ได้รับจาก req.body
+        role, 
       },
     });
 
@@ -37,111 +50,133 @@ exports.createUser = async (req, res) => {
 };
 
 
-///getAllAdmins
-exports.getAllAdmins = async (req, res) => {
+
+///getAllUser
+exports.getallUser = async (req, res) => {
   try {
-    const admins = await prisma.admin.findMany({
-      where: { role: 'ADMIN' },
-    });
-    res.status(200).json(admins);
+    const users = await prisma.user.findMany();
+    res.status(200).json(users);
   } catch (error) {
-    console.error("Error fetching admins:", error.message);
+    console.error("Error fetching users:", error.message);
     res.status(400).json({ error: error.message });
   }
 };
 
+// Get All Users
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await prisma.user.findMany();
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error.message);
+    res.status(400).json({ error: error.message });
+  }
+};
 
-///---------------------------------------------------------------------------------------------------------------------------///
+// Get Roles 
+exports.getRole = async (req, res) => {
+  const { role } = req.params;
 
-// Create Advisor
-exports.createAdvisor = async (req, res) => {
+  try {
+      const users = await prisma.user.findMany({
+          where: {
+            ////เมธอด toUpperCase() ใช้สำหรับแปลงข้อความให้กลายเป็นตัวพิมพ์ใหญ่ทั้งหมด 
+            ///โดยจะไม่เปลี่ยนแปลงข้อความต้นฉบับแต่จะสร้างข้อความใหม่ที่มีตัวอักษรทั้งหมดเป็นตัวพิมพ์ใหญ่
+              role: role.toUpperCase() 
+          }
+      });
+
+      res.status(200).json(users);
+  } catch (error) {
+      console.error("Error fetching users by role:", error);
+      res.status(400).json({ error: "Error fetching users by role:" });
+  }
+};
+
+
+// Update User   
+exports.updateUser = async (req, res) => {
+  const { id } = req.params;
   const { name, username, password } = req.body;
 
   try {
-    // Check if advisor with the same username already exists
-    const existingAdvisor = await prisma.advisor.findFirst({
-      where: { username },
+    const existingUser = await prisma.user.findUnique({
+      where: { id: parseInt(id) },
     });
 
-    if (existingAdvisor) {
-      return res.status(400).send('Advisor with this username already exists');
+    if (!existingUser) {
+      return res.status(404).json({ message: `User with ID ${id} not found` });
     }
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create a new advisor
-    const newAdvisor = await prisma.advisor.create({
-      data: {
-        name,
-        username,
-        password: hashedPassword,
-        role: 'ADVISOR',
-      },
-    });
-
-    res.status(201).json(newAdvisor);
-  } catch (error) {
-    console.error("Error creating advisor:", error.message);
-    res.status(400).json({ error: error.message });
-  }
-};
-
-// Update Advisor
-exports.updateAdvisor = async (req, res) => {
-  const { id } = req.params;
-  const { name, username, password } = req.body;
-
-  try {
     const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
-    const updatedAdvisor = await prisma.advisor.update({
+    const updatedUser = await prisma.user.update({
       where: { id: parseInt(id) },
       data: {
         name,
         username,
-        password: hashedPassword,
+        password: hashedPassword || existingUser.password, 
       },
     });
 
-    res.status(200).json(updatedAdvisor);
+    res.status(200).json({ message: `User with ID ${id} has been updated successfully` });
   } catch (error) {
-    console.error("Error updating advisor:", error.message);
+    console.error("Error updating user:", error.message);
     res.status(400).json({ error: error.message });
   }
 };
 
-// Delete Advisor
-exports.deleteAdvisor = async (req, res) => {
+
+
+
+
+// Delete User
+exports.deleteUser = async (req, res) => {
   const { id } = req.params;
 
   try {
-    await prisma.advisor.delete({
+    const existingUser = await prisma.user.findUnique({
       where: { id: parseInt(id) },
     });
 
-    res.status(204).send();
-  } catch (error) {
-    console.error("Error deleting advisor:", error.message);
-    res.status(400).json({ error: error.message });
-  }
-};
+    if (!existingUser) {
+      return res.status(404).json({ message: `User with ID ${id} not found` });
+    }
 
-// Get All Advisors
-exports.getAllAdvisors = async (req, res) => {
-  try {
-    const advisors = await prisma.advisor.findMany({
-      where: { role: 'ADVISOR' },
+    await prisma.user.delete({
+      where: { id: parseInt(id) },
     });
-    res.status(200).json(advisors);
+
+    res.status(200).json({ message: `User with ID ${id} has been deleted successfully` });
   } catch (error) {
-    console.error("Error fetching advisors:", error.message);
+    console.error("Error deleting user:", error.message);
     res.status(400).json({ error: error.message });
   }
 };
 
 
-///---------------------------------------------------------------------------------------------------------------------------///
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // Create Course Instructor
