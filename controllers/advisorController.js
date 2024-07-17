@@ -1,3 +1,4 @@
+const { Role } = require("@prisma/client");
 const prisma = require("../models/prisma");
 const bcrypt = require("bcryptjs");
 
@@ -78,10 +79,16 @@ exports.getStudentById = async (req,res) => {
             where: {id: parseInt(id)},
             include: {studentInfo: true}
         });
+
         if (!student) {
           res.status(404),json({ message: `Id ${id} not found`})
           return;
         }
+
+        if ( student.role != 'STUDENT') {
+          return res.status(404).json({ message: `ID ${id} are not Student!!!!` });
+        } 
+        
         res.status(200).json(student)
         
     } catch (error) {
@@ -127,3 +134,47 @@ exports.getStudentByYear = async (req,res) => {
       res.status(400).json({ error: error.message });
   }
 }
+
+exports.updateStudent = async (req, res) => {
+  const { id } = req.params;
+  const {name, studentIdcard,year,room} = req.body
+
+  try {
+    const existingUser = await prisma.user.findUnique({
+      where: {id: parseInt(id)},
+      include: {studentInfo: true}
+    })
+    if (!existingUser) {
+      return res.status(404).json({ message: `User with ID ${id} not found` });
+    }
+
+
+    if ( existingUser.role != 'STUDENT') {
+      return res.status(404).json({ message: `ID ${id} are not Student!!!!` });
+    }
+    console.log(existingUser);
+
+
+
+
+    const updateStudent = await prisma.user.update({
+      where: { id: parseInt(id) },
+      include: {studentInfo: true},
+      data: {
+        name,
+        studentInfo:{
+        update: {
+          year, 
+          room, 
+          studentIdcard
+        }
+      } 
+      }
+    })
+
+      res.status(200).json({message: `update Success!!!!`, updateStudent})
+  } catch (error) {
+    console.error("Error updating user:", error.message);
+    res.status(400).json({ error: error.message });
+  }
+};
