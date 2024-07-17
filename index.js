@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const authRouter = require("./routers/authRouter");
 const userRouter = require("./routers/userRouter");
 const courseRouter = require("./routers/courseRouter"); 
+const advisorRouter = require("./routers/advisorRouter"); 
 
 dotenv.config();
 
@@ -13,6 +14,7 @@ app.use(express.json());
 app.use("/api", authRouter);
 app.use("/api", userRouter);
 app.use("/api", courseRouter); 
+app.use("/api", advisorRouter); 
 
 
 app.get("/", (req, res) => {

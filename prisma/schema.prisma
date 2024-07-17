@@ -20,55 +20,101 @@ enum Role {
   COURSE_INSTRUCTOR
 }
 
+
+
 model User {
   id       Int      @id @default(autoincrement())
   name     String
   username String   @unique
   password String   
-  role     Role   
-  student  Studentinfo?
-}
+  role     Role 
+  studentInfo    StudentInfo?
 
-model Studentinfo {
-  id        Int        @id @default(autoincrement())
-  student   User       @relation(fields: [studentId], references: [id])
-  studentId Int        @unique
-  class     Class[]
-}
 
-model Class {
-  id        Int            @id @default(autoincrement())
-  year      Int
-  students  Studentinfo[]
 }
+ model StudentInfo {
+    id        Int      @id @default(autoincrement())
+    student   User   @relation(fields: [studentsId], references: [id])
+    studentsId Int   @unique
+    studentIdcard   Int 
+    year      Int
+    room      Int
+    studentPlan  StudentPlan?
+ }
 
-model Course {
-  id              Int       @id @default(autoincrement())
-  thaiName        String    // ชื่อหลักสูตรภาษาไทย
-  englishName     String    // ชื่อหลักสูตรภาษาอังกฤษ
-  code            String    @unique // รหัสหลักสูตร
-  year            Int       // ปีของหลักสูตร
-  creditUnits     Int       // จำนวนหน่วยกิต
-  courseInstructor String    // อาจารย์ผู้รับผิดชอบหลักสูตร (ชื่อเท่านั้น)
-  subjects        Subject[]
-}
+ model StudentPlan {
+      id        Int      @id @default(autoincrement())
+      studentPlanName String
+      studentPlanYear String
 
-model Subject {
-  id             Int      @id @default(autoincrement())
-  code           String   // รหัสรายวิชา
-  thaiName       String   // ชื่อรายวิชาภาษาไทย
-  englishName    String   // ชื่อรายวิชาภาษาอังกฤษ
-  compulsory     Boolean  // เป็นรายวิชาบังคับหรือไม่
-  creditPerUnit  Int      // น(ท-ป-ค) หน่วยกิตต่อวิชา
-  course         Course   @relation(fields: [courseId], references: [id])
-  courseId       Int
-  subjectGroup   SubjectGroup? @relation(fields: [subjectGroupId], references: [id])
-  subjectGroupId Int?
-}
+      student   StudentInfo   @relation(fields: [studentsId], references: [id])
+      studentsId Int   @unique
 
-model SubjectGroup {
-  id          Int        @id @default(autoincrement())
-  name        String     // ชื่อกลุ่มวิชา
-  creditUnits Int        // จำนวนหน่วยกิตของกลุ่มวิชา
-  subjects    Subject[]  // ระบุความสัมพันธ์ด้วย Subject[]
-}
+      course   Course   @relation(fields: [courseId], references: [id])
+      courseId Int @unique
+ }
+
+ model Major {
+      id        Int      @id @default(autoincrement())
+      major   String
+      majorNameTH String
+      majorNameENG  String
+      majorYear String
+      majorUnit String
+      majorStatus String
+      
+      majorSupervisor String
+
+      category  Category[]
+
+      group Group[]
+      
+      course  Course[]
+ }
+
+ model Category {
+        id        Int      @id @default(autoincrement())
+        categoryName  String
+        categoryUnit  String
+
+        major   Major   @relation(fields: [majorId], references: [id])
+        majorId Int @unique
+
+        group Group[]
+
+        course  Course[]
+ }
+
+ model  Group {
+        id        Int      @id @default(autoincrement())
+        groupName String
+        groupUnit String
+
+        major   Major   @relation(fields: [majorId], references: [id])
+        majorId Int @unique
+
+        category   Category   @relation(fields: [categoryId], references: [id])
+        categoryId Int @unique
+
+        course  Course[]
+ }
+
+ model Course {
+        id        Int      @id @default(autoincrement())
+        courseCode String
+        courseNameTH  String
+        courseNameENG String
+        courseYear  String
+        courseUnit  Int
+
+        major   Major   @relation(fields: [majorId], references: [id])
+        majorId Int @unique
+
+        category   Category   @relation(fields: [categoryId], references: [id])
+        categoryId Int @unique
+
+        group   Group   @relation(fields: [groupId], references: [id])
+        groupId Int @unique
+
+        studentPlan StudentPlan[]
+ }
