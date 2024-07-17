@@ -1,15 +1,22 @@
-// routers/userRouter.js
-
 const express = require("express");
-const { createUser, deleteUser, updateUser, createStudent, createAdmin, getAllAdmins } = require("../controllers/userController");
+const router = express.Router();
+const {
+  createUser,
+  getallUser,
+  updateUser,
+  deleteUser,
+  getRole,
+} = require("../controllers/userController");
 const checkRole = require("../middlewares/checkRole");
 
-const router = express.Router();
 
-router.post("/users", checkRole(['ADMIN']), createUser);
-router.delete("/users/:userId", checkRole(['ADMIN']), deleteUser);
-router.put("/users/:userId", checkRole(['ADMIN']), updateUser);
-router.post("/students", checkRole(['ADVISOR']), createStudent);
-router.post("/createAdmin", createAdmin);
-router.get('/admins', getAllAdmins);
+///admin zone
+router.post("/createUser", createUser);
+router.get("/getallUser", getallUser);
+router.get("/getRole/:role", getRole);
+router.put("/updateUser/:id", updateUser);
+router.delete("/deleteUser/:id", checkRole(['ADMIN']), deleteUser);
 module.exports = router;
+
+
+

@@ -1,4 +1,4 @@
-// This is your Prisma schema file,
+
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
@@ -21,29 +21,54 @@ enum Role {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  email     String   @unique
-  name      String?
-  password  String
-  role      Role     @default(STUDENT)
-  students  Student[] @relation("AdvisorStudents")
-  courses   Course[]  @relation("InstructorCourses")
+  id       Int      @id @default(autoincrement())
+  name     String
+  username String   @unique
+  password String   
+  role     Role   
+  student  Studentinfo?
 }
 
-model Student {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  email     String   @unique
-  name      String?
-  advisor   User     @relation("AdvisorStudents", fields: [advisorId], references: [id])
-  advisorId Int
+model Studentinfo {
+  id        Int        @id @default(autoincrement())
+  student   User       @relation(fields: [studentId], references: [id])
+  studentId Int        @unique
+  class     Class[]
+}
+
+model Class {
+  id        Int            @id @default(autoincrement())
+  year      Int
+  students  Studentinfo[]
 }
 
 model Course {
-  id           Int      @id @default(autoincrement())
-  createdAt    DateTime @default(now())
-  name         String
-  instructor   User     @relation("InstructorCourses", fields: [instructorId], references: [id])
-  instructorId Int
+  id              Int       @id @default(autoincrement())
+  thaiName        String    // ชื่อหลักสูตรภาษาไทย
+  englishName     String    // ชื่อหลักสูตรภาษาอังกฤษ
+  code            String    @unique // รหัสหลักสูตร
+  year            Int       // ปีของหลักสูตร
+  creditUnits     Int       // จำนวนหน่วยกิต
+  courseInstructor String    // อาจารย์ผู้รับผิดชอบหลักสูตร (ชื่อเท่านั้น)
+  subjects        Subject[]
+}
+
+model Subject {
+  id             Int      @id @default(autoincrement())
+  code           String   // รหัสรายวิชา
+  thaiName       String   // ชื่อรายวิชาภาษาไทย
+  englishName    String   // ชื่อรายวิชาภาษาอังกฤษ
+  compulsory     Boolean  // เป็นรายวิชาบังคับหรือไม่
+  creditPerUnit  Int      // น(ท-ป-ค) หน่วยกิตต่อวิชา
+  course         Course   @relation(fields: [courseId], references: [id])
+  courseId       Int
+  subjectGroup   SubjectGroup? @relation(fields: [subjectGroupId], references: [id])
+  subjectGroupId Int?
+}
+
+model SubjectGroup {
+  id          Int        @id @default(autoincrement())
+  name        String     // ชื่อกลุ่มวิชา
+  creditUnits Int        // จำนวนหน่วยกิตของกลุ่มวิชา
+  subjects    Subject[]  // ระบุความสัมพันธ์ด้วย Subject[]
 }
