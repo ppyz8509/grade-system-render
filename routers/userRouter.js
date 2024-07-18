@@ -16,6 +16,7 @@ router.get("/getallUser", getallUser);
 router.get("/getRole/:role", getRole);
 router.put("/updateUser/:id", updateUser);
 router.delete("/deleteUser/:id", checkRole(['ADMIN']), deleteUser);
+
 module.exports = router;
 
 
