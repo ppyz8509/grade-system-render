@@ -54,51 +54,48 @@ model User {
       courseId Int @unique
  }
 
+
+
+/// หลักสูตร
  model Major {
       id        Int      @id @default(autoincrement())
-      major   String
       majorNameTH String
       majorNameENG  String
       majorYear String
       majorUnit String
       majorStatus String
-      
+      majorCode String
       majorSupervisor String
 
       category  Category[]
-
-      group Group[]
       
       course  Course[]
  }
 
+ 
+//หมวดวิชา
  model Category {
         id        Int      @id @default(autoincrement())
         categoryName  String
         categoryUnit  String
 
         major   Major   @relation(fields: [majorId], references: [id])
-        majorId Int @unique
+        majorId Int 
 
         group Group[]
 
-        course  Course[]
- }
-
+ 
+ }   
+///กลุ่มวิชา
  model  Group {
         id        Int      @id @default(autoincrement())
         groupName String
         groupUnit String
 
-        major   Major   @relation(fields: [majorId], references: [id])
-        majorId Int @unique
-
         category   Category   @relation(fields: [categoryId], references: [id])
-        categoryId Int @unique
-
-        course  Course[]
+        categoryId Int 
  }
-
+//รายวิชา
  model Course {
         id        Int      @id @default(autoincrement())
         courseCode String
@@ -108,13 +105,7 @@ model User {
         courseUnit  Int
 
         major   Major   @relation(fields: [majorId], references: [id])
-        majorId Int @unique
-
-        category   Category   @relation(fields: [categoryId], references: [id])
-        categoryId Int @unique
-
-        group   Group   @relation(fields: [groupId], references: [id])
-        groupId Int @unique
+        majorId Int 
 
         studentPlan StudentPlan[]
  }
