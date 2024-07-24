@@ -36,6 +36,32 @@ exports.getallMajor = async (req, res) => {
     res.status(500).json({ error: 'Unable to fetch majors', details: error.message });
   }
 };
+exports.getMajorById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const major = await prisma.major.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        category: {
+          include: {
+            group: true
+          }
+        },
+        course: true
+      }
+    });
+
+    if (!major) {
+      return res.status(404).json({ error: `Major with ID ${id} not found` });
+    }
+
+    return res.status(200).json({ major });
+  } catch (error) {
+    console.error('Error fetching major:', error.message, error.stack);
+    res.status(500).json({ error: 'Unable to fetch major', details: error.message });
+  }
+};
 exports.updateMajor = async (req, res) => {
   const { id } = req.params;
   const { major } = req.body;
@@ -79,13 +105,31 @@ exports.deleteMajor = async (req, res) => {
       return res.status(404).json({ error: `Major with ID ${id} not found` });
     }
 
-    await prisma.category.deleteMany({
-      where: { majorId: parseInt(id) }
+    // ค้นหา Category ที่เกี่ยวข้องกับ Major นั้น
+    const categories = await prisma.category.findMany({
+      where: { majorId: parseInt(id) },
     });
 
+    // ลบข้อมูลใน Group ที่อ้างอิงถึง Category
+    for (const category of categories) {
+      await prisma.group.deleteMany({
+        where: { categoryId: category.id },
+      });
+    }
 
+    // ลบข้อมูลใน Category ที่เกี่ยวข้องกับ Major
+    await prisma.category.deleteMany({
+      where: { majorId: parseInt(id) },
+    });
+
+    // ลบข้อมูลใน Course ที่อ้างอิงถึง Major
+    await prisma.course.deleteMany({
+      where: { majorId: parseInt(id) },
+    });
+
+    // ลบ Major
     await prisma.major.delete({
-      where: { id: parseInt(id) }
+      where: { id: parseInt(id) },
     });
 
     return res.status(200).json({ message: `Major with ID ${id} has been deleted successfully` });
@@ -94,6 +138,7 @@ exports.deleteMajor = async (req, res) => {
     res.status(500).json({ error: 'Unable to delete major', details: error.message });
   }
 };
+
 
 
 ///Category
@@ -155,7 +200,6 @@ exports.deleteCategory = async (req, res) => {
   const { id } = req.params;
 
   try {
-
     const category = await prisma.category.findUnique({
       where: { id: parseInt(id) },
     });
@@ -164,6 +208,12 @@ exports.deleteCategory = async (req, res) => {
       return res.status(404).json({ error: `Category with ID ${id} not found` });
     }
 
+    // ลบข้อมูลใน Group ที่อ้างอิงถึง Category นั้นก่อน
+    await prisma.group.deleteMany({
+      where: { categoryId: parseInt(id) }
+    });
+
+    // ลบ Category นั้น
     await prisma.category.delete({
       where: { id: parseInt(id) }
     });
@@ -174,7 +224,6 @@ exports.deleteCategory = async (req, res) => {
     res.status(500).json({ error: 'Unable to delete category', details: error.message });
   }
 };
-
 
 ///Group
 exports.createGroup = async (req, res) => {
