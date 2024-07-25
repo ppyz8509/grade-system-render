@@ -145,6 +145,12 @@ exports.deleteUser = async (req, res) => {
       return res.status(404).json({ message: `User with ID ${id} not found` });
     }
 
+    // ลบข้อมูลที่เกี่ยวข้อง
+    await prisma.studentInfo.deleteMany({
+      where: { studentsId: parseInt(id) },
+    });
+
+    // ลบผู้ใช้
     await prisma.user.delete({
       where: { id: parseInt(id) },
     });
@@ -155,6 +161,7 @@ exports.deleteUser = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
 
 
 
