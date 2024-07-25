@@ -28,8 +28,13 @@ CREATE TABLE "StudentPlan" (
     "id" SERIAL NOT NULL,
     "studentPlanName" TEXT NOT NULL,
     "studentPlanYear" TEXT NOT NULL,
-    "studentsId" INTEGER NOT NULL,
-    "courseId" INTEGER NOT NULL,
+    "studentsId" INTEGER,
+    "categoryId" INTEGER,
+    "categoryName" TEXT,
+    "groupId" INTEGER,
+    "groupName" TEXT,
+    "courseId" INTEGER,
+    "courseName" TEXT,
 
     CONSTRAINT "StudentPlan_pkey" PRIMARY KEY ("id")
 );
@@ -77,6 +82,7 @@ CREATE TABLE "Course" (
     "courseYear" TEXT NOT NULL,
     "courseUnit" INTEGER NOT NULL,
     "majorId" INTEGER NOT NULL,
+    "groupId" INTEGER NOT NULL,
 
     CONSTRAINT "Course_pkey" PRIMARY KEY ("id")
 );
@@ -90,26 +96,20 @@ CREATE UNIQUE INDEX "StudentInfo_studentsId_key" ON "StudentInfo"("studentsId");
 -- CreateIndex
 CREATE UNIQUE INDEX "StudentPlan_studentsId_key" ON "StudentPlan"("studentsId");
 
--- CreateIndex
-CREATE UNIQUE INDEX "StudentPlan_courseId_key" ON "StudentPlan"("courseId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Category_majorId_key" ON "Category"("majorId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Group_categoryId_key" ON "Group"("categoryId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Course_majorId_key" ON "Course"("majorId");
-
 -- AddForeignKey
 ALTER TABLE "StudentInfo" ADD CONSTRAINT "StudentInfo_studentsId_fkey" FOREIGN KEY ("studentsId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "StudentPlan" ADD CONSTRAINT "StudentPlan_studentsId_fkey" FOREIGN KEY ("studentsId") REFERENCES "StudentInfo"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "StudentPlan" ADD CONSTRAINT "StudentPlan_studentsId_fkey" FOREIGN KEY ("studentsId") REFERENCES "StudentInfo"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "StudentPlan" ADD CONSTRAINT "StudentPlan_courseId_fkey" FOREIGN KEY ("courseId") REFERENCES "Course"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "StudentPlan" ADD CONSTRAINT "StudentPlan_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "StudentPlan" ADD CONSTRAINT "StudentPlan_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "Group"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "StudentPlan" ADD CONSTRAINT "StudentPlan_courseId_fkey" FOREIGN KEY ("courseId") REFERENCES "Course"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Category" ADD CONSTRAINT "Category_majorId_fkey" FOREIGN KEY ("majorId") REFERENCES "Major"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -119,3 +119,6 @@ ALTER TABLE "Group" ADD CONSTRAINT "Group_categoryId_fkey" FOREIGN KEY ("categor
 
 -- AddForeignKey
 ALTER TABLE "Course" ADD CONSTRAINT "Course_majorId_fkey" FOREIGN KEY ("majorId") REFERENCES "Major"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Course" ADD CONSTRAINT "Course_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "Group"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

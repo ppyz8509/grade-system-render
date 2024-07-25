@@ -45,10 +45,13 @@ exports.getMajorById = async (req, res) => {
       include: {
         category: {
           include: {
-            group: true
+            group: {
+              include:{
+                course:true
+              }
+            }
           }
         },
-        course: true
       }
     });
 
@@ -110,8 +113,19 @@ exports.deleteMajor = async (req, res) => {
       where: { majorId: parseInt(id) },
     });
 
-    // ลบข้อมูลใน Group ที่อ้างอิงถึง Category
+    // ลบข้อมูลใน Course ที่อ้างอิงถึง Group ที่เกี่ยวข้องกับ Category นั้น ๆ
     for (const category of categories) {
+      const groups = await prisma.group.findMany({
+        where: { categoryId: category.id },
+      });
+
+      for (const group of groups) {
+        await prisma.course.deleteMany({
+          where: { groupId: group.id },
+        });
+      }
+
+      // ลบข้อมูลใน Group ที่อ้างอิงถึง Category
       await prisma.group.deleteMany({
         where: { categoryId: category.id },
       });
@@ -141,19 +155,29 @@ exports.deleteMajor = async (req, res) => {
 
 
 
+
 ///Category
 exports.createCategory = async (req, res) => {
   const { category } = req.body;
 
   try {
+    // ตรวจสอบว่า majorId มีอยู่ในฐานข้อมูลหรือไม่
+    const majorExists = await prisma.major.findUnique({
+      where: { id: category.majorId },
+    });
+
+    if (!majorExists) {
+      return res.status(404).json({ error: `majorId with ID ${category.majorId} not found` });
+    }
+
+
     const newCategory = await prisma.category.create({
       data: {
         majorId: category.majorId,
         categoryName: category.categoryName,
         categoryUnit: category.categoryUnit,
-      }
+      },
     });
-
     return res.status(201).json({ newCategory });
   } catch (error) {
     console.error('Error creating category:', error.message, error.stack);
@@ -208,14 +232,26 @@ exports.deleteCategory = async (req, res) => {
       return res.status(404).json({ error: `Category with ID ${id} not found` });
     }
 
-    // ลบข้อมูลใน Group ที่อ้างอิงถึง Category นั้นก่อน
+    // ค้นหา Groups ที่เกี่ยวข้องกับ Category นั้น
+    const groups = await prisma.group.findMany({
+      where: { categoryId: parseInt(id) },
+    });
+
+    // ลบข้อมูลใน Course ที่อ้างอิงถึง Group นั้น ๆ ก่อน
+    for (const group of groups) {
+      await prisma.course.deleteMany({
+        where: { groupId: group.id },
+      });
+    }
+
+    // ลบข้อมูลใน Group ที่อ้างอิงถึง Category นั้น
     await prisma.group.deleteMany({
-      where: { categoryId: parseInt(id) }
+      where: { categoryId: parseInt(id) },
     });
 
     // ลบ Category นั้น
     await prisma.category.delete({
-      where: { id: parseInt(id) }
+      where: { id: parseInt(id) },
     });
 
     return res.status(200).json({ message: 'Category deleted successfully' });
@@ -225,17 +261,28 @@ exports.deleteCategory = async (req, res) => {
   }
 };
 
+
 ///Group
 exports.createGroup = async (req, res) => {
   const { group } = req.body;
 
   try {
+    // ตรวจสอบว่า Category ที่มี ID ที่ระบุมีอยู่จริงหรือไม่
+    const existingCategory = await prisma.category.findUnique({
+      where: { id: group.categoryId },
+    });
+
+    if (!existingCategory) {
+      return res.status(404).json({ error: `Category with ID ${group.categoryId} not found` });
+    }
+
+    // สร้าง Group ใหม่
     const newGroup = await prisma.group.create({
       data: {
         groupName: group.groupName,
         groupUnit: group.groupUnit,
         categoryId: group.categoryId,
-      }
+      },
     });
 
     return res.status(201).json({ newGroup });
@@ -296,7 +343,7 @@ exports.deleteGroup = async (req, res) => {
   const { id } = req.params;
 
   try {
-    // Check if group with given ID exists
+    // ตรวจสอบว่า group ที่มี ID นี้มีอยู่หรือไม่
     const existingGroup = await prisma.group.findUnique({
       where: { id: parseInt(id) },
     });
@@ -305,12 +352,17 @@ exports.deleteGroup = async (req, res) => {
       return res.status(404).json({ error: `Group with ID ${id} not found` });
     }
 
-    // Delete group
+    // ลบข้อมูลใน Course ที่อ้างอิงถึง Group
+    await prisma.course.deleteMany({
+      where: { groupId: parseInt(id) },
+    });
+
+    // ลบ Group
     await prisma.group.delete({
       where: { id: parseInt(id) },
     });
 
-    return res.status(200).json({ message: `Group with ID ${id} has been deleted` });
+    return res.status(200).json({ message: `Group with ID ${id} has been deleted successfully` });
   } catch (error) {
     console.error('Error deleting group:', error.message, error.stack);
     res.status(500).json({ error: 'Unable to delete group', details: error.message });
@@ -318,11 +370,37 @@ exports.deleteGroup = async (req, res) => {
 };
 
 
+
 ///Course
 exports.createCourse = async (req, res) => {
   const { course } = req.body;
 
   try {
+    // ตรวจสอบว่าMajorที่มี ID ที่ระบุมีอยู่จริงหรือไม่
+    const existingMajor = await prisma.major.findUnique({
+      where: { id: course.majorId },
+    });
+
+    // ตรวจสอบว่าGroupที่มี ID ที่ระบุมีอยู่จริงหรือไม่
+    const existingGroup = await prisma.group.findUnique({
+      where: { id: course.groupId },
+    });
+
+    // ตรวจสอบผลการค้นหา
+    if (!existingMajor && !existingGroup) {
+      return res.status(404).json({
+        error: `Major with ID ${course.majorId} and Group with ID ${course.groupId} not found`,
+      });
+    } else if (!existingMajor) {
+      return res.status(404).json({
+        error: `Major with ID ${course.majorId} not found`,
+      });
+    } else if (!existingGroup) {
+      return res.status(404).json({
+        error: `Group with ID ${course.groupId} not found`,
+      });
+    }
+
     const newCourse = await prisma.course.create({
       data: {
         courseCode: course.courseCode,
@@ -331,7 +409,8 @@ exports.createCourse = async (req, res) => {
         courseYear: course.courseYear,
         courseUnit: course.courseUnit,
         majorId: course.majorId,
-      }
+        groupId: course.groupId,
+      },
     });
 
     return res.status(201).json({ newCourse });
