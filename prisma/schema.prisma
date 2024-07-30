@@ -64,72 +64,58 @@ model User {
       courseName  String?
 
 
-
-
  }
 
 
+model Major {
+  id              Int      @id @default(autoincrement())
+  majorNameTH     String
+  majorNameENG    String
+  majorYear       String
+  majorUnit       String
+  majorStatus     String
+  majorCode       String
+  majorSupervisor String
+  categories      Category[]
+  courses         Course[]
+}
 
-/// หลักสูตร
- model Major {
-      id        Int      @id @default(autoincrement())
-      majorNameTH String
-      majorNameENG  String
-      majorYear String
-      majorUnit String
-      majorStatus String
-      majorCode String
-      majorSupervisor String
+model Category {
+  id           Int      @id @default(autoincrement())
+  categoryName String
+  categoryUnit String
+  major        Major    @relation(fields: [majorId], references: [id])
+  majorId      Int
+  groups       Group[]
+  courses      Course[]
+  studentPlans StudentPlan[]
+}
+model Group {
+  id            Int      @id @default(autoincrement())
+  groupName     String
+  groupUnit     String
+  category      Category @relation(fields: [categoryId], references: [id])
+  categoryId    Int
+  parentGroup   Group?   @relation("Subgroups", fields: [parentGroupId], references: [id])
+  parentGroupId Int? 
+  subgroups     Group[]  @relation("Subgroups")
+  courses       Course[]
+  studentPlans  StudentPlan[]
+}
 
-      category  Category[]
-      
-      course  Course[]
- }
 
- 
-//หมวดวิชา
- model Category {
-        id        Int      @id @default(autoincrement())
-        categoryName  String
-        categoryUnit  String
-
-        major   Major   @relation(fields: [majorId], references: [id])
-        majorId Int 
-
-        group Group[]
-
-        studentPlan  StudentPlan[]
- 
- }   
-///กลุ่มวิชา
- model  Group {
-        id        Int      @id @default(autoincrement())
-        groupName String
-        groupUnit String
-
-        category   Category   @relation(fields: [categoryId], references: [id])
-        categoryId Int 
-
-        studentPlan  StudentPlan[]
-        course  Course[]
-
-  
- }
-//รายวิชา
- model Course {
-        id        Int      @id @default(autoincrement())
-        courseCode String
-        courseNameTH  String
-        courseNameENG String
-        courseYear  String
-        courseUnit  Int
-
-        major   Major   @relation(fields: [majorId], references: [id])
-        majorId Int 
-
-        group   Group   @relation(fields: [groupId], references: [id])
-        groupId Int 
-
-        studentPlan  StudentPlan[]
-
- }
+model Course {
+  id           Int      @id @default(autoincrement())
+  courseCode   String
+  courseNameTH String
+  courseNameENG String
+  courseYear   String
+  courseUnit   Int
+  major        Major    @relation(fields: [majorId], references: [id])
+  majorId      Int
+  category     Category @relation(fields: [categoryId], references: [id])
+  categoryId   Int
+  group        Group?   @relation(fields: [groupId], references: [id])
+  groupId      Int?
+  studentPlans StudentPlan[]
+}
