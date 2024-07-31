@@ -8,7 +8,7 @@ exports.createUser = async (req, res) => {
   const { name, username, password, role } = req.body; // รับค่า role จาก req.body
 
   try {
-    // Check if a user with the same username already exists
+    // Check if a user with the same username already existssdf
     const existingUser = await prisma.user.findFirst({
       where: { username },
     });
