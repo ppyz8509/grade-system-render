@@ -32,6 +32,8 @@ model User {
 
 
 }
+
+
  model StudentInfo {
     id        Int      @id @default(autoincrement())
     student   User   @relation(fields: [studentsId], references: [id])
@@ -102,6 +104,10 @@ model Group {
   courses       Course[]
   studentPlans  StudentPlan[]
 }
+///parentGroup: เป็นการเชื่อมโยงแบบ Many-to-One กับ Group โดยใช้ parentGroupId เป็น foreign key หมายถึงกลุ่มย่อยสามารถเชื่อมโยงกับกลุ่มหลักได้หนึ่งกลุ่ม
+//subgroups: เป็นการเชื่อมโยงแบบ One-to-Many กับ Group ในความสัมพันธ์แบบ self-referential หมายถึงกลุ่มหนึ่งสามารถมีหลายกลุ่มย่อยได้
+
+
 
 
 model Course {

@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient(); // สร้าง PrismaClient ใหม่
 
-// ฟังก์ชันสำหรับสร้าง Major
+//Major
 exports.createMajor = async (req, res) => {
   const { major } = req.body;
 
@@ -76,9 +76,26 @@ exports.getMajorById = async (req, res) => {
       return rootGroups;
     };
 
+    // ฟังก์ชันสำหรับกรอง Course ที่ซ้ำกันออก
+    const filterCourses = (groups) => {
+      const courseSet = new Set();
+      groups.forEach(group => {
+        group.courses = group.courses.filter(course => {
+          if (courseSet.has(course.id)) {
+            return false;
+          } else {
+            courseSet.add(course.id);
+            return true;
+          }
+        });
+        group.subgroups.forEach(subgroup => filterCourses([subgroup]));
+      });
+    };
+
     // จัดกลุ่มและจัดเรียงกลุ่มในแต่ละ category
     major.categories.forEach(category => {
       category.groups = organizeGroups(category.groups);
+      filterCourses(category.groups); // กรอง Course ที่ซ้ำกันออก
     });
 
     return res.status(200).json({ major });
@@ -87,10 +104,90 @@ exports.getMajorById = async (req, res) => {
     res.status(500).json({ error: 'Unable to fetch major', details: error.message });
   }
 };
+exports.getAllMajors = async (req, res) => {
+  try {
+    const majors = await prisma.major.findMany();
+
+    return res.status(200).json({ majors });
+  } catch (error) {
+    console.error('Error fetching majors:', error.message, error.stack);
+    res.status(500).json({ error: 'Unable to fetch majors', details: error.message });
+  }
+};
+exports.updateMajor = async (req, res) => {
+  const { id } = req.params;
+  const { major } = req.body;
+
+  try {
+    const updatedMajor = await prisma.major.update({
+      where: { id: parseInt(id) },
+      data: {
+        majorNameTH: major.majorNameTH,
+        majorNameENG: major.majorNameENG,
+        majorYear: major.majorYear,
+        majorUnit: major.majorUnit,
+        majorCode: major.majorCode,
+        majorStatus: major.majorStatus,
+        majorSupervisor: major.majorSupervisor,
+      }
+    });
+
+    return res.status(200).json({ updatedMajor });
+  } catch (error) {
+    console.error('Error updating major:', error.message, error.stack);
+    res.status(500).json({ error: 'Unable to update major', details: error.message });
+  }
+};
+exports.deleteMajor = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const major = await prisma.major.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        categories: {
+          include: {
+            groups: {
+              include: {
+                subgroups: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!major) {
+      return res.status(404).json({ error: 'Major not found' });
+    }
+
+    // ลบข้อมูลที่มีความสัมพันธ์ก่อน
+    await prisma.course.deleteMany({
+      where: { majorId: parseInt(id) },
+    });
+
+    await prisma.group.deleteMany({
+      where: { categoryId: { in: major.categories.map(category => category.id) } },
+    });
+
+    await prisma.category.deleteMany({
+      where: { majorId: parseInt(id) },
+    });
+
+    await prisma.major.delete({
+      where: { id: parseInt(id) },
+    });
+
+    return res.status(200).json({ message: 'Major deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting major:', error.message, error.stack);
+    res.status(500).json({ error: 'Unable to delete major', details: error.message });
+  }
+};
 
 
 
-// ฟังก์ชันสำหรับสร้าง Course
+//Course
 exports.createCourse = async (req, res) => {
   const { course } = req.body;
 
@@ -147,8 +244,84 @@ exports.createCourse = async (req, res) => {
     res.status(500).json({ error: 'Unable to create course', details: error.message });
   }
 };
+exports.getAllCourses = async (req, res) => {
+  try {
+    const courses = await prisma.course.findMany();
 
-// ฟังก์ชันสำหรับสร้าง Group
+    return res.status(200).json({ courses });
+  } catch (error) {
+    console.error('Error fetching courses:', error.message, error.stack);
+    res.status(500).json({ error: 'Unable to fetch courses', details: error.message });
+  }
+};
+exports.getCourseById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const course = await prisma.course.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!course) {
+      return res.status(404).json({ error: 'Course not found' });
+    }
+
+    return res.status(200).json({ course });
+  } catch (error) {
+    console.error('Error fetching course:', error.message, error.stack);
+    res.status(500).json({ error: 'Unable to fetch course', details: error.message });
+  }
+};
+exports.updateCourse = async (req, res) => {
+  const { id } = req.params;
+  const { course } = req.body;
+
+  try {
+    const updatedCourse = await prisma.course.update({
+      where: { id: parseInt(id) },
+      data: {
+        courseCode: course.courseCode,
+        courseNameTH: course.courseNameTH,
+        courseNameENG: course.courseNameENG,
+        courseYear: course.courseYear,
+        courseUnit: course.courseUnit,
+        majorId: course.majorId,
+        categoryId: course.categoryId,
+        groupId: course.groupId || null,
+      },
+    });
+
+    return res.status(200).json({ updatedCourse });
+  } catch (error) {
+    console.error('Error updating course:', error.message, error.stack);
+    res.status(500).json({ error: 'Unable to update course', details: error.message });
+  }
+};
+exports.deleteCourse = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const course = await prisma.course.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!course) {
+      return res.status(404).json({ error: 'Course not found' });
+    }
+
+    await prisma.course.delete({
+      where: { id: parseInt(id) },
+    });
+
+    return res.status(200).json({ message: 'Course deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting course:', error.message, error.stack);
+    res.status(500).json({ error: 'Unable to delete course', details: error.message });
+  }
+};
+
+
+//Group
 exports.createGroup = async (req, res) => {
   const { group } = req.body;
 
@@ -187,8 +360,7 @@ exports.createGroup = async (req, res) => {
     res.status(500).json({ error: 'Unable to create group', details: error.message });
   }
 };
-
-// ฟังก์ชันสำหรับสร้าง Subgroup
+//Subgroup
 exports.createSubgroup = async (req, res) => {
   const { subgroup } = req.body;
 
@@ -227,32 +399,83 @@ exports.createSubgroup = async (req, res) => {
     res.status(500).json({ error: 'Unable to create subgroup', details: error.message });
   }
 };
+exports.getAllGroups = async (req, res) => {
+  try {
+    const groups = await prisma.group.findMany({
+      include: {
+        subgroups: true,
+      },
+    });
 
-// ฟังก์ชันสำหรับลบ Group
+    return res.status(200).json({ groups });
+  } catch (error) {
+    console.error('Error fetching groups:', error.message, error.stack);
+    res.status(500).json({ error: 'Unable to fetch groups', details: error.message });
+  }
+};
+exports.updateGroup = async (req, res) => {
+  const { id } = req.params;
+  const { group } = req.body;
+
+  try {
+    const updatedGroup = await prisma.group.update({
+      where: { id: parseInt(id) },
+      data: {
+        groupName: group.groupName,
+        groupUnit: group.groupUnit,
+        categoryId: group.categoryId,
+        parentGroupId: group.parentGroupId || null,
+      },
+    });
+
+    return res.status(200).json({ updatedGroup });
+  } catch (error) {
+    console.error('Error updating group:', error.message, error.stack);
+    res.status(500).json({ error: 'Unable to update group', details: error.message });
+  }
+};
 exports.deleteGroup = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const existingGroup = await prisma.group.findUnique({
+    const group = await prisma.group.findUnique({
       where: { id: parseInt(id) },
+      include: {
+        subgroups: true,
+        courses: true,
+      },
     });
 
-    if (!existingGroup) {
-      return res.status(404).json({ error: `Group with ID ${id} not found` });
+    if (!group) {
+      return res.status(404).json({ error: 'Group not found' });
     }
+
+    // ลบข้อมูลที่มีความสัมพันธ์ก่อน
+    await prisma.course.deleteMany({
+      where: { groupId: parseInt(id) },
+    });
+
+    await prisma.group.deleteMany({
+      where: { parentGroupId: parseInt(id) },
+    });
 
     await prisma.group.delete({
       where: { id: parseInt(id) },
     });
 
-    return res.status(200).json({ message: `Group with ID ${id} deleted successfully` });
+    return res.status(200).json({ message: 'Group deleted successfully' });
   } catch (error) {
     console.error('Error deleting group:', error.message, error.stack);
     res.status(500).json({ error: 'Unable to delete group', details: error.message });
   }
 };
 
-// ฟังก์ชันสำหรับสร้าง Category
+
+
+
+
+
+//Category
 exports.createCategory = async (req, res) => {
   const { category } = req.body;
 
@@ -279,27 +502,128 @@ exports.createCategory = async (req, res) => {
     res.status(500).json({ error: 'Unable to create category', details: error.message });
   }
 };
+exports.getAllCategories = async (req, res) => {
+  try {
+    const categories = await prisma.category.findMany();
 
-// ฟังก์ชันสำหรับลบ Category
+    return res.status(200).json({ categories });
+  } catch (error) {
+    console.error('Error fetching categories:', error.message, error.stack);
+    res.status(500).json({ error: 'Unable to fetch categories', details: error.message });
+  }
+};
+exports.getCategoryById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const category = await prisma.category.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        groups: {
+          include: {
+            subgroups: { 
+              include: {
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+    // ฟังก์ชันสำหรับจัดกลุ่มและจัดเรียงกลุ่ม
+    const organizeGroups = (groups) => {
+      const groupMap = {};
+      const rootGroups = [];
+
+      groups.forEach(group => {
+        group.subgroups = [];
+        groupMap[group.id] = group;
+      });
+
+      groups.forEach(group => {
+        if (group.parentGroupId) {
+          if (groupMap[group.parentGroupId]) {
+            groupMap[group.parentGroupId].subgroups.push(group);
+          }
+        } else {
+          rootGroups.push(group);
+        }
+      });
+
+      return rootGroups;
+    };
+
+    // จัดกลุ่มและจัดเรียงกลุ่มในแต่ละ category
+    category.groups = organizeGroups(category.groups);
+
+    return res.status(200).json({ category });
+  } catch (error) {
+    console.error('Error fetching category:', error.message, error.stack);
+    res.status(500).json({ error: 'Unable to fetch category', details: error.message });
+  }
+};
+exports.updateCategory = async (req, res) => {
+  const { id } = req.params;
+  const { category } = req.body;
+
+  try {
+    const updatedCategory = await prisma.category.update({
+      where: { id: parseInt(id) },
+      data: {
+        categoryName: category.categoryName,
+        categoryUnit: category.categoryUnit,
+        majorId: category.majorId,
+      },
+    });
+
+    return res.status(200).json({ updatedCategory });
+  } catch (error) {
+    console.error('Error updating category:', error.message, error.stack);
+    res.status(500).json({ error: 'Unable to update category', details: error.message });
+  }
+};
 exports.deleteCategory = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const existingCategory = await prisma.category.findUnique({
+    const category = await prisma.category.findUnique({
       where: { id: parseInt(id) },
+      include: {
+        groups: {
+          include: {
+            subgroups: true,
+            courses: true,
+          },
+        },
+      },
     });
 
-    if (!existingCategory) {
-      return res.status(404).json({ error: `Category with ID ${id} not found` });
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' });
     }
+
+    // ลบข้อมูลที่มีความสัมพันธ์ก่อน
+    await prisma.course.deleteMany({
+      where: { categoryId: parseInt(id) },
+    });
+
+    await prisma.group.deleteMany({
+      where: { categoryId: parseInt(id) },
+    });
 
     await prisma.category.delete({
       where: { id: parseInt(id) },
     });
 
-    return res.status(200).json({ message: `Category with ID ${id} deleted successfully` });
+    return res.status(200).json({ message: 'Category deleted successfully' });
   } catch (error) {
     console.error('Error deleting category:', error.message, error.stack);
     res.status(500).json({ error: 'Unable to delete category', details: error.message });
   }
 };
+
+
+
