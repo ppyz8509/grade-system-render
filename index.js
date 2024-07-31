@@ -23,7 +23,7 @@ app.use(cors({
 
 app.use(express.json());
 
-// Combine Routers k
+// Combine Routers 
 app.use("/api", authRouter);
 app.use("/api", userRouter);
 app.use("/api", advisorRouter);
