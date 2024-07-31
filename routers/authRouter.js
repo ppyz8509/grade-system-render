@@ -23,7 +23,7 @@ router.get('/decode-token', checkRole(['ADMIN', 'ADVISOR', 'STUDENT', 'COURSE_IN
         }
 
         res.json({ decoded });
-        // ส่ง payload ที่ถอดรหัสแล้วกลับไปเป็นคำตอบในรูปแบบ JSON
+        // ส่ง payload ที่ถอดรหัสแล้วกลับไปเป็นคำตอบในรูปแบบ JSONasdasd
     } catch (error) {
         console.error("Error decoding token:", error.message);
         res.status(500).json({ message: "Internal server error" });
