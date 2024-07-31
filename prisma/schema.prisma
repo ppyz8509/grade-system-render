@@ -20,54 +20,77 @@ enum Role {
   COURSE_INSTRUCTOR
 }
 
+model Admin {
+  Admin_id      Int      @id @default(autoincrement())
+  A_fristname   String
+  A_lastname    String
+  A_username    String   
+  A_password    String  
+  role          Role        @default(ADMIN)
+  A_phone       Int?
+  A_email       String? 
+}
 
+model COURSE_INSTRUCTOR {
+  C_id          Int      @id @default(autoincrement())
+  C_fristname   String
+  C_lastname    String
+  C_username    String   
+  C_password    String  
+  role          Role        @default(COURSE_INSTRUCTOR)
+  C_phone       Int?
+  C_email       String? 
+}
 
-model User {
-  id       Int      @id @default(autoincrement())
-  name     String
-  username String   @unique
-  password String   
-  role     Role 
-  studentInfo    StudentInfo?
+model Student {
+  S_id          String
+  S_firstname   String
+  S_lastname    String
+  S_password    String
+  role          Role        @default(STUDENT)
+  S_phone       String?     // อนุญาตให้เป็น null
+  S_email       String?     // อนุญาตให้เป็น null
 
+  classroom     Classroom   @relation(fields: [room],references: [roomname])
+  room          String          
 
+  @@id([S_id])
+}
+
+model Teacher {
+  T_id            Int         @default(autoincrement())
+  T_firstname     String
+  T_lastname      String
+  T_username      String      
+  T_password      String  
+  role            Role        @default(ADVISOR)
+  T_phone         Int?
+  T_email         String? 
+  advisorrooms    Advisor[]
+  @@id([T_id , T_firstname , T_lastname])
+}
+
+model Classroom {
+  roomname      String     @id 
+  teachers      Advisor[]
+  students      Student[] 
+}
+
+model Advisor {
+  Advisor_id                Int         @id @default(autoincrement())
+  teacher             Teacher     @relation(fields: [teacherId, teacherfirstName, teacherlastName], references: [T_id,T_firstname,T_lastname])
+  teacherId           Int
+  teacherfirstName    String
+  teacherlastName     String
+  classroom           Classroom     @relation(fields: [roomName], references: [roomname])
+  roomName            String
 }
 
 
- model StudentInfo {
-    id        Int      @id @default(autoincrement())
-    student   User   @relation(fields: [studentsId], references: [id])
-    studentsId Int   @unique
-    studentIdcard   Int 
-    year      Int
-    room      Int
-    studentPlan  StudentPlan[]
- }
-
- model StudentPlan {
-      id        Int      @id @default(autoincrement())
-      studentPlanName String
-      studentPlanYear String
-
-      student   StudentInfo?   @relation(fields: [studentsId], references: [id])
-      studentsId Int?   @unique
-
-
-      category   Category?   @relation(fields: [categoryId], references: [id])
-      categoryId Int?
-      categoryName  String?
-
-      group   Group?   @relation(fields: [groupId], references: [id])
-      groupId Int?
-      groupName  String?
-
-      course   Course?   @relation(fields: [courseId], references: [id])
-      courseId Int?
-      courseName  String?
-
-
- }
-
+enum Status {
+  ACTIVE
+  INACTIVE
+}
 
 model Major {
 
@@ -76,7 +99,7 @@ model Major {
   majorNameENG    String
   majorYear       String
   majorUnit       String
-  majorStatus     String
+  status          Status
   majorCode       String
   majorSupervisor String
   categories      Category[] ///เชื่อมต่อกับ Category ผ่านฟิลด์ categories
@@ -91,7 +114,6 @@ model Category {
   majorId      Int
   groups       Group[]//เชื่อมต่อกับ Group ผ่านฟิลด์ groups
   courses      Course[]//เชื่อมต่อกับ Course ผ่านฟิลด์ courses
-  studentPlans StudentPlan[]  //เชื่อมต่อกับ StudentPlan ผ่านฟิลด์ studentPlans
 }
 model Group {
   id            Int      @id @default(autoincrement())
@@ -103,7 +125,6 @@ model Group {
   parentGroupId Int? 
   subgroups     Group[]  @relation("Subgroups")
   courses       Course[]//เชื่อมต่อกับ Course ผ่านฟิลด์ courses
-  studentPlans  StudentPlan[]//เชื่อมต่อกับ StudentPlan ผ่านฟิลด์ studentPlans
   ///parentGroup: เป็นการเชื่อมโยงแบบ Many-to-One กับ Group โดยใช้ parentGroupId เป็น foreign key หมายถึงกลุ่มย่อยสามารถเชื่อมโยงกับกลุ่มหลักได้หนึ่งกลุ่ม
   //subgroups: เป็นการเชื่อมโยงแบบ One-to-Many กับ Group ในความสัมพันธ์แบบ self-referential หมายถึงกลุ่มหนึ่งสามารถมีหลายกลุ่มย่อยได้
 }
@@ -121,7 +142,6 @@ model Course {
   categoryId   Int
   group        Group?   @relation(fields: [groupId], references: [id])//เชื่อมต่อกับ Group ผ่านฟิลด์ group
   groupId      Int?
-  studentPlans StudentPlan[]//เชื่อมต่อกับ StudentPlan ผ่านฟิลด์ studentPlans
 }
 
 
@@ -129,3 +149,6 @@ model Course {
 //Category หนึ่งสามารถมีหลาย Group (One-to-Many)
 //Group หนึ่งสามารถมีหลาย Subgroups (One-to-Many) และสามารถเชื่อมโยงกับ Group หลักได้หนึ่ง Group
 //Major หนึ่งสามารถมีหลาย Course (One-to-Many)
+
+
+

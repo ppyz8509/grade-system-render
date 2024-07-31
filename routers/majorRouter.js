@@ -4,6 +4,7 @@ const {
   createMajor,
   getAllMajors,
   getMajorById,
+  updateMajorStatus,
   updateMajor,
   deleteMajor,
   createCategory,
@@ -29,8 +30,8 @@ const checkRole = require("../middlewares/checkRole");
 router.post("/createMajor",createMajor);
 router.get("/getMajorById/:id",getMajorById);
 router.get("/getAllMajors",getAllMajors);
-router.put("/updateMajor/:id",updateMajor) ;
-router.delete("/deleteMajor/:id",deleteMajor) ;
+router.put("/updateMajor/:id",updateMajor);
+router.delete("/deleteMajor/:id",deleteMajor);
 
 
 //Category

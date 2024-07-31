@@ -1,19 +1,18 @@
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient(); 
+const prisma = new PrismaClient();
 
 //Major
 exports.createMajor = async (req, res) => {
   const { major } = req.body;
-  
-  // ตรวจสอบความครบถ้วนของข้อมูลแบบถ้าฟิวไหนไม่ได้กรอกจะแจ้ง
+
   const requiredFields = [
     'majorNameTH',
     'majorNameENG',
     'majorYear',
     'majorUnit',
     'majorCode',
-    'majorStatus',
-    'majorSupervisor'
+    'majorSupervisor',
+    'status'
   ];
 
   for (const field of requiredFields) {
@@ -26,7 +25,13 @@ exports.createMajor = async (req, res) => {
   if (major.majorCode.length !== 14) {
     return res.status(400).json({ error: 'majorCode must be exactly 14 digits long' });
   }
-  
+
+  // ตรวจสอบ status
+  const validStatuses = ['ACTIVE', 'INACTIVE'];
+  if (!validStatuses.includes(major.status)) {
+    return res.status(400).json({ error: 'Invalid status. Must be either ACTIVE or INACTIVE' });
+  }
+
   try {
     const newMajor = await prisma.major.create({
       data: {
@@ -35,11 +40,11 @@ exports.createMajor = async (req, res) => {
         majorYear: major.majorYear,
         majorUnit: major.majorUnit,
         majorCode: major.majorCode,
-        majorStatus: major.majorStatus,
+        status: major.status,
         majorSupervisor: major.majorSupervisor,
       }
     });
-  
+
     return res.status(201).json({ newMajor });
   } catch (error) {
     console.error('Error creating major:', error.message, error.stack);
@@ -57,7 +62,7 @@ exports.getMajorById = async (req, res) => {
           include: {
             groups: {
               include: {
-                subgroups: { 
+                subgroups: {
                   include: {
                     courses: true,
                   },
@@ -141,6 +146,14 @@ exports.updateMajor = async (req, res) => {
   const { major } = req.body;
 
   try {
+    // ตรวจสอบ status ถ้ามีการส่งมาใน request
+    if (major.status) {
+      const validStatuses = ['ACTIVE', 'INACTIVE'];
+      if (!validStatuses.includes(major.status)) {
+        return res.status(400).json({ error: 'Invalid status. Must be either ACTIVE or INACTIVE' });
+      }
+    }
+
     const updatedMajor = await prisma.major.update({
       where: { id: parseInt(id) },
       data: {
@@ -149,7 +162,7 @@ exports.updateMajor = async (req, res) => {
         majorYear: major.majorYear,
         majorUnit: major.majorUnit,
         majorCode: major.majorCode,
-        majorStatus: major.majorStatus,
+        status: major.status,  
         majorSupervisor: major.majorSupervisor,
       }
     });
@@ -538,7 +551,7 @@ exports.getCategoryById = async (req, res) => {
       include: {
         groups: {
           include: {
-            subgroups: { 
+            subgroups: {
               include: {
               },
             },
