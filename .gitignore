@@ -36,4 +36,4 @@ next-env.d.ts
 
 .env
 
-.prisma
+prisma/migrations/

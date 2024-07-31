@@ -31,6 +31,7 @@ model Admin {
   A_email       String? 
 }
 
+
 model COURSE_INSTRUCTOR {
   C_id          Int      @id @default(autoincrement())
   C_fristname   String
@@ -66,27 +67,34 @@ model Teacher {
   role            Role        @default(ADVISOR)
   T_phone         Int?
   T_email         String? 
+
   advisorrooms    Advisor[]
+
   @@id([T_id , T_firstname , T_lastname])
 }
 
 model Classroom {
   roomname      String     @id 
+
   teachers      Advisor[]
   students      Student[] 
 }
 
 model Advisor {
   Advisor_id                Int         @id @default(autoincrement())
+
   teacher             Teacher     @relation(fields: [teacherId, teacherfirstName, teacherlastName], references: [T_id,T_firstname,T_lastname])
   teacherId           Int
   teacherfirstName    String
   teacherlastName     String
+
   classroom           Classroom     @relation(fields: [roomName], references: [roomname])
   roomName            String
+
 }
 
 
+//major by PPYz
 enum Status {
   ACTIVE
   INACTIVE
@@ -114,6 +122,7 @@ model Category {
   majorId      Int
   groups       Group[]//เชื่อมต่อกับ Group ผ่านฟิลด์ groups
   courses      Course[]//เชื่อมต่อกับ Course ผ่านฟิลด์ courses
+
 }
 model Group {
   id            Int      @id @default(autoincrement())
@@ -125,9 +134,11 @@ model Group {
   parentGroupId Int? 
   subgroups     Group[]  @relation("Subgroups")
   courses       Course[]//เชื่อมต่อกับ Course ผ่านฟิลด์ courses
+
   ///parentGroup: เป็นการเชื่อมโยงแบบ Many-to-One กับ Group โดยใช้ parentGroupId เป็น foreign key หมายถึงกลุ่มย่อยสามารถเชื่อมโยงกับกลุ่มหลักได้หนึ่งกลุ่ม
   //subgroups: เป็นการเชื่อมโยงแบบ One-to-Many กับ Group ในความสัมพันธ์แบบ self-referential หมายถึงกลุ่มหนึ่งสามารถมีหลายกลุ่มย่อยได้
 }
+
 
 model Course {
   id           Int      @id @default(autoincrement())
@@ -149,6 +160,7 @@ model Course {
 //Category หนึ่งสามารถมีหลาย Group (One-to-Many)
 //Group หนึ่งสามารถมีหลาย Subgroups (One-to-Many) และสามารถเชื่อมโยงกับ Group หลักได้หนึ่ง Group
 //Major หนึ่งสามารถมีหลาย Course (One-to-Many)
+
 
 
 
