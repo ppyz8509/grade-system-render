@@ -1,60 +1,83 @@
 const { Role } = require("@prisma/client");
 const prisma = require("../models/prisma");
 const bcrypt = require("bcryptjs");
+const { json } = require("express");
+
 
 exports.createStudent = async (req, res) => {
-  const { name, username, password, year, room, studentIdcard} = req.body; // รับค่า role จาก req.body
+
+  console.log("Request Body:", req.body);
+
+  const { 
+    S_id,
+    S_fristname,
+    S_lastname,
+    S_username,
+    S_password,
+    S_phone,
+    S_email,
+    room, 
+    roomname
+   } = req.body;
+  
+  
+
+  const exitingclassroom = await prisma.classroom.findMany({
+    where: { 
+      classroom: [roomname]
+      
+
+     },
+  })
+
+  if (!exitingclassroom) {
+    return res.status(400).json({message: "Room exting"})
+    
+  }
+  console.log(roomname);
+
+  const existingStudentId = await prisma.student.findFirst({
+    where: { S_id },
+  })
+
+  if (existingStudentId) {
+    return res.status(400).json({message: "Student Id already!!!!"})
+    
+  }
+  const existingStudentUser = await prisma.student.findFirst({
+    where: { S_username },
+  })
+
+  if (existingStudentUser) {
+    return res.status(400).json({message: "Username already!!!!"})
+    
+  }
+
+
+
+
 
   try {
-    // Check if a user with the same username already exists
-    const existingUser = await prisma.user.findFirst({
-      where: { 
-        username,
-       },
-    });
-    const existingStudent = await prisma.studentInfo.findFirst({
-      where: { 
-        studentIdcard,
-       },
-    });
-    if (!username) {
-      res.status(400).json({message : "no username"})
-      return;
-    }
+  
+    const hashedPassword = await bcrypt.hash(S_password, 10);
 
-    if (!password) {
-      res.status(400).json({message : "no password"})
-      return;
-    }
-if (existingUser) {
-   return res.status(400).send('User with this Student already exists');
-} 
-if (existingStudent) {
-  return res.status(400).send('Student ID with this Student already exists');
-} 
-
-
-
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create a new user with the specified role
-    const newStudent = await prisma.user.create({
-      data: {
-        name,
-        username,
-        password: hashedPassword,
-        role: "STUDENT",
-        studentInfo: {
-          create: {year , room, studentIdcard} 
-        }
-      }, include: {studentInfo: true}
+    const newStudent = await prisma.student.create({
+      data: 
+      {
+        S_id: S_id,
+        S_fristname: S_fristname,
+        S_lastname: S_lastname,
+        S_username: S_username,
+        S_password: hashedPassword,
+        S_phone: S_phone,
+        S_email: S_email,
+        room: room,
+      },
     });
 
-
-    res.status(201).json(newStudent);
+    return res.status(201).json(newStudent);
   } catch (error) {
-    console.error("Error creating Student:", error.message);
+    console.error("Error creating Student:", error);
     res.status(400).json({ error: error.message });
   }
 };
@@ -178,3 +201,74 @@ exports.updateStudent = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+
+exports.createStudentPlan = async (req, res) => {
+  const {studentPlanName, studentPlanYear } = req.body
+  try {
+
+    const newStudentPlan = await prisma.studentPlan.create({
+      data: {
+        studentPlanName,
+        studentPlanYear
+      } 
+    });
+    res.status(201).json(newStudentPlan);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+  
+}
+
+exports.updateStudentPlan = async (req, res) => {
+  const { id } = req.params;
+  const { category, group, course } = req.body
+  console.log(category,group,course);
+  try {
+      const updateStudentPlan = await prisma.studentPlan.update({
+        where: { id: parseInt(id)},
+        include: {studentPlan: true},
+        data: {
+          categoryName: category.categoryName,
+          groupName: group.groupName,
+          courseName: course.courseName
+  }
+  
+});
+
+      res.status(201).json(updateStudentPlan)
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+exports.deleteStudent = async (req, res) => {
+  console.log("Request params:", req.params);
+  const { S_id, S_username } = req.params;
+
+  try {
+    // Check if the student with the given ID and username exists
+    const existingStudent = await prisma.student.findFirst({
+      where: { S_id: S_id, S_username: S_username },
+    });
+
+    if (!existingStudent) {
+      return res.status(404).json({ error: `Student with ID ${S_id} not found` });
+    }
+
+    // Delete the student
+    await prisma.student.delete({
+      where: {
+        S_id_S_username: {
+          S_id: S_id,
+          S_username: S_username
+        }
+      }
+    });
+
+    return res.status(200).json({ message: `Student with ID ${S_id} has been deleted successfully` });
+  } catch (error) {
+    console.error('Error deleting student:', error);
+    res.status(500).json({ error: 'Unable to delete student', details: error.message });
+  }
+}
