@@ -1,10 +1,32 @@
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient(); // สร้าง PrismaClient ใหม่
+const prisma = new PrismaClient(); 
 
 //Major
 exports.createMajor = async (req, res) => {
   const { major } = req.body;
+  
+  // ตรวจสอบความครบถ้วนของข้อมูลแบบถ้าฟิวไหนไม่ได้กรอกจะแจ้ง
+  const requiredFields = [
+    'majorNameTH',
+    'majorNameENG',
+    'majorYear',
+    'majorUnit',
+    'majorCode',
+    'majorStatus',
+    'majorSupervisor'
+  ];
 
+  for (const field of requiredFields) {
+    if (!major[field]) {
+      return res.status(400).json({ error: `Missing required field: ${field}` });
+    }
+  }
+
+  // ตรวจสอบ majorCode
+  if (major.majorCode.length !== 14) {
+    return res.status(400).json({ error: 'majorCode must be exactly 14 digits long' });
+  }
+  
   try {
     const newMajor = await prisma.major.create({
       data: {
@@ -17,7 +39,7 @@ exports.createMajor = async (req, res) => {
         majorSupervisor: major.majorSupervisor,
       }
     });
-
+  
     return res.status(201).json({ newMajor });
   } catch (error) {
     console.error('Error creating major:', error.message, error.stack);
@@ -184,7 +206,6 @@ exports.deleteMajor = async (req, res) => {
     res.status(500).json({ error: 'Unable to delete major', details: error.message });
   }
 };
-
 
 
 //Course
@@ -469,10 +490,6 @@ exports.deleteGroup = async (req, res) => {
     res.status(500).json({ error: 'Unable to delete group', details: error.message });
   }
 };
-
-
-
-
 
 
 //Category

@@ -70,7 +70,8 @@ model User {
 
 
 model Major {
-  id              Int      @id @default(autoincrement())
+
+  id              Int      @id @default(autoincrement())  //ฟิลด์
   majorNameTH     String
   majorNameENG    String
   majorYear       String
@@ -78,37 +79,34 @@ model Major {
   majorStatus     String
   majorCode       String
   majorSupervisor String
-  categories      Category[]
-  courses         Course[]
+  categories      Category[] ///เชื่อมต่อกับ Category ผ่านฟิลด์ categories
+  courses         Course[]//เชื่อมต่อกับ Course ผ่านฟิลด์ courses
 }
 
 model Category {
   id           Int      @id @default(autoincrement())
   categoryName String
   categoryUnit String
-  major        Major    @relation(fields: [majorId], references: [id])
+  major        Major    @relation(fields: [majorId], references: [id]) //เชื่อมต่อกับ Major ผ่านฟิลด์ major
   majorId      Int
-  groups       Group[]
-  courses      Course[]
-  studentPlans StudentPlan[]
+  groups       Group[]//เชื่อมต่อกับ Group ผ่านฟิลด์ groups
+  courses      Course[]//เชื่อมต่อกับ Course ผ่านฟิลด์ courses
+  studentPlans StudentPlan[]  //เชื่อมต่อกับ StudentPlan ผ่านฟิลด์ studentPlans
 }
 model Group {
   id            Int      @id @default(autoincrement())
   groupName     String
   groupUnit     String
-  category      Category @relation(fields: [categoryId], references: [id])
+  category      Category @relation(fields: [categoryId], references: [id])  //เชื่อมต่อกับ Category ผ่านฟิลด์ category
   categoryId    Int
-  parentGroup   Group?   @relation("Subgroups", fields: [parentGroupId], references: [id])
+  parentGroup   Group?   @relation("Subgroups", fields: [parentGroupId], references: [id])//เชื่อมต่อกับตัวเองผ่านฟิลด์ parentGroup และ subgroups
   parentGroupId Int? 
   subgroups     Group[]  @relation("Subgroups")
-  courses       Course[]
-  studentPlans  StudentPlan[]
+  courses       Course[]//เชื่อมต่อกับ Course ผ่านฟิลด์ courses
+  studentPlans  StudentPlan[]//เชื่อมต่อกับ StudentPlan ผ่านฟิลด์ studentPlans
+  ///parentGroup: เป็นการเชื่อมโยงแบบ Many-to-One กับ Group โดยใช้ parentGroupId เป็น foreign key หมายถึงกลุ่มย่อยสามารถเชื่อมโยงกับกลุ่มหลักได้หนึ่งกลุ่ม
+  //subgroups: เป็นการเชื่อมโยงแบบ One-to-Many กับ Group ในความสัมพันธ์แบบ self-referential หมายถึงกลุ่มหนึ่งสามารถมีหลายกลุ่มย่อยได้
 }
-///parentGroup: เป็นการเชื่อมโยงแบบ Many-to-One กับ Group โดยใช้ parentGroupId เป็น foreign key หมายถึงกลุ่มย่อยสามารถเชื่อมโยงกับกลุ่มหลักได้หนึ่งกลุ่ม
-//subgroups: เป็นการเชื่อมโยงแบบ One-to-Many กับ Group ในความสัมพันธ์แบบ self-referential หมายถึงกลุ่มหนึ่งสามารถมีหลายกลุ่มย่อยได้
-
-
-
 
 model Course {
   id           Int      @id @default(autoincrement())
@@ -117,11 +115,17 @@ model Course {
   courseNameENG String
   courseYear   String
   courseUnit   Int
-  major        Major    @relation(fields: [majorId], references: [id])
+  major        Major    @relation(fields: [majorId], references: [id])//เชื่อมต่อกับ Major ผ่านฟิลด์ major
   majorId      Int
-  category     Category @relation(fields: [categoryId], references: [id])
+  category     Category @relation(fields: [categoryId], references: [id])//เชื่อมต่อกับ Category ผ่านฟิลด์ category
   categoryId   Int
-  group        Group?   @relation(fields: [groupId], references: [id])
+  group        Group?   @relation(fields: [groupId], references: [id])//เชื่อมต่อกับ Group ผ่านฟิลด์ group
   groupId      Int?
-  studentPlans StudentPlan[]
+  studentPlans StudentPlan[]//เชื่อมต่อกับ StudentPlan ผ่านฟิลด์ studentPlans
 }
+
+
+//Major หนึ่งสามารถมีหลาย Category (One-to-Many)
+//Category หนึ่งสามารถมีหลาย Group (One-to-Many)
+//Group หนึ่งสามารถมีหลาย Subgroups (One-to-Many) และสามารถเชื่อมโยงกับ Group หลักได้หนึ่ง Group
+//Major หนึ่งสามารถมีหลาย Course (One-to-Many)
