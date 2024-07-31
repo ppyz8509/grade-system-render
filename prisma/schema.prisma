@@ -31,6 +31,7 @@ model Admin {
   A_email       String? 
 }
 
+
 model COURSE_INSTRUCTOR {
   C_id          Int      @id @default(autoincrement())
   C_fristname   String
@@ -152,6 +153,14 @@ model Course {
   categoryId   Int
   group        Group?   @relation(fields: [groupId], references: [id])//เชื่อมต่อกับ Group ผ่านฟิลด์ group
   groupId      Int?
-  
 }
+
+
+//Major หนึ่งสามารถมีหลาย Category (One-to-Many)
+//Category หนึ่งสามารถมีหลาย Group (One-to-Many)
+//Group หนึ่งสามารถมีหลาย Subgroups (One-to-Many) และสามารถเชื่อมโยงกับ Group หลักได้หนึ่ง Group
+//Major หนึ่งสามารถมีหลาย Course (One-to-Many)
+
+
+
 

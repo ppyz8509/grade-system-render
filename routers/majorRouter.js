@@ -2,55 +2,62 @@ const express = require("express");
 const router = express.Router();
 const {
   createMajor,
-  getallMajor,
+  getAllMajors,
   getMajorById,
+  updateMajorStatus,
   updateMajor,
   deleteMajor,
   createCategory,
   getAllCategories,
+  getCategoryById ,
   updateCategory,
   deleteCategory,
   createGroup,
+  createSubgroup,
   getAllGroups,
   updateGroup,
   deleteGroup,
   createCourse,
-  getAllCourses,
   updateCourse ,
-  deleteCourse 
+  getAllCourses,
+  getCourseById ,
+  deleteCourse ,
 } = require("../controllers/majorController");
 const checkRole = require("../middlewares/checkRole");
 
 
-
-
-
 ///major
-router.post("/createMajor", checkRole(['COURSE_INSTRUCTOR']),createMajor);
-router.get("/getallMajor",checkRole(['COURSE_INSTRUCTOR']),getallMajor)
-router.get("/getMajorById/:id",checkRole(['COURSE_INSTRUCTOR']),getMajorById)
-router.put("/updateMajor/:id",checkRole(['COURSE_INSTRUCTOR']),updateMajor)
-router.delete("/deleteMajor/:id",checkRole(['COURSE_INSTRUCTOR']),deleteMajor)
+router.post("/createMajor",createMajor);
+router.get("/getMajorById/:id",getMajorById);
+router.get("/getAllMajors",getAllMajors);
+router.put("/updateMajor/:id",updateMajor);
+router.delete("/deleteMajor/:id",deleteMajor);
+
 
 //Category
-router.post("/createCategory",checkRole(['COURSE_INSTRUCTOR']),createCategory) ;
-router.get("/getAllCategories",checkRole(['COURSE_INSTRUCTOR']),getAllCategories) ;
-router.put("/updateCategory/:id",checkRole(['COURSE_INSTRUCTOR']),updateCategory);
-router.delete("/deleteCategory/:id",checkRole(['COURSE_INSTRUCTOR']),deleteCategory)
+router.post("/createCategory",createCategory) ;
+router.get("/getCategoryById/:id",getCategoryById );
+router.get("/getAllCategories",getAllCategories);
+router.put("/updateCategory/:id",updateCategory) ;
+router.delete("/deleteCategory/:id",deleteCategory) ;
 
 
 // //Group
-router.post("/createGroup",checkRole(['COURSE_INSTRUCTOR']),createGroup) ;
-router.get("/getAllGroups",checkRole(['COURSE_INSTRUCTOR']),getAllGroups) ;
-router.put("/updateGroup/:id",checkRole(['COURSE_INSTRUCTOR']),updateGroup);
-router.delete("/deleteGroup/:id",checkRole(['COURSE_INSTRUCTOR']),deleteGroup)
+router.post("/createGroup",createGroup) ;
+router.post("/createSubgroup/subgroup", createSubgroup);
+router.get("/getAllGroups",getAllGroups);
+router.put("/updateGroup/:id",updateGroup ) ;
+router.delete("/deleteGroup/:id",deleteGroup) ;
 
 
 // //Course
-router.post("/createCourse",checkRole(['COURSE_INSTRUCTOR']),createCourse) ;
-router.get("/getAllCourses",checkRole(['COURSE_INSTRUCTOR']),getAllCourses) ;
-router.put("/updateCourse/:id",checkRole(['COURSE_INSTRUCTOR']),updateCourse);
-router.delete("/deleteCourse/:id",checkRole(['COURSE_INSTRUCTOR']),deleteCourse)
+router.post("/createCourse",createCourse) ;
+router.get("/getCourseById/:id",getCourseById );
+router.get("/getAllCourses",getAllCourses);
+router.put("/updateCourse/:id",updateCourse) ;
+router.delete("/deleteCourse/:id",deleteCourse) ;
+
+
 
 
 module.exports = router;
