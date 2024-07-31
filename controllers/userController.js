@@ -102,7 +102,7 @@ exports.getRole = async (req, res) => {
 // Update User
 exports.updateUser = async (req, res) => {
   const { id } = req.params;
-  const { name, username, password } = req.body;
+  const { name, username, password, role } = req.body;
 
   try {
     const existingUser = await prisma.user.findUnique({
@@ -113,7 +113,7 @@ exports.updateUser = async (req, res) => {
       return res.status(404).json({ message: `User with ID ${id} not found` });
     }
 
-    const hashedPassword = password ? await bcrypt.hash(password, 10) : existingUser.password;
+    const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
     const updatedUser = await prisma.user.update({
       where: { id: parseInt(id) },
@@ -121,9 +121,11 @@ exports.updateUser = async (req, res) => {
         name,
         username,
         password: hashedPassword || existingUser.password,
+        role, // อัปเดตข้อมูล role
       },
     });
-    res.status(200).json({ message: `User with ID ${id} has been updated successfully`, user: updatedUser });
+
+    res.status(200).json({ message: `User with ID ${id} has been updated successfully` });
   } catch (error) {
     console.error("Error updating user:", error.message);
     res.status(400).json({ error: error.message });
@@ -143,6 +145,12 @@ exports.deleteUser = async (req, res) => {
       return res.status(404).json({ message: `User with ID ${id} not found` });
     }
 
+    // ลบข้อมูลที่เกี่ยวข้อง
+    await prisma.studentInfo.deleteMany({
+      where: { studentsId: parseInt(id) },
+    });
+
+    // ลบผู้ใช้
     await prisma.user.delete({
       where: { id: parseInt(id) },
     });
@@ -153,6 +161,7 @@ exports.deleteUser = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
 
 
 
