@@ -19,8 +19,6 @@ exports.createClassroom = async (req,res) =>{
 }
 
 exports.getAllRoom = async (req, res) => {
-    const Rooms = await prisma.classroom.findMany([
-
-    ])
+    const Rooms = await prisma.classroom.findMany()
     res.status(200).json(Rooms)
 }

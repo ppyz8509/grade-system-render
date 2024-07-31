@@ -10,31 +10,23 @@ exports.createStudent = async (req, res) => {
 
   const { 
     S_id,
-    S_fristname,
+    S_firstname,
     S_lastname,
-    S_username,
     S_password,
     S_phone,
     S_email,
-    room, 
-    roomname
+    room,
    } = req.body;
   
   
 
-  const exitingclassroom = await prisma.classroom.findMany({
-    where: { 
-      classroom: [roomname]
-      
-
-     },
-  })
+  const exitingclassroom = await prisma.classroom.findMany()
 
   if (!exitingclassroom) {
     return res.status(400).json({message: "Room exting"})
     
   }
-  console.log(roomname);
+  console.log(exitingclassroom);
 
   const existingStudentId = await prisma.student.findFirst({
     where: { S_id },
@@ -44,18 +36,14 @@ exports.createStudent = async (req, res) => {
     return res.status(400).json({message: "Student Id already!!!!"})
     
   }
-  const existingStudentUser = await prisma.student.findFirst({
-    where: { S_username },
-  })
 
-  if (existingStudentUser) {
-    return res.status(400).json({message: "Username already!!!!"})
-    
+
+
+  const roomMatch = exitingclassroom.every(exitingRoom => exitingRoom.roomname !== room);
+  if (roomMatch) {
+     return res.status(400).json({ message: "room not match !!!!" });
   }
-
-
-
-
+  
 
   try {
   
@@ -65,9 +53,8 @@ exports.createStudent = async (req, res) => {
       data: 
       {
         S_id: S_id,
-        S_fristname: S_fristname,
+        S_firstname: S_firstname,
         S_lastname: S_lastname,
-        S_username: S_username,
         S_password: hashedPassword,
         S_phone: S_phone,
         S_email: S_email,
@@ -82,11 +69,10 @@ exports.createStudent = async (req, res) => {
   }
 };
 
-exports.getStudent = async (req,res) => {
+exports.getAllStudents = async (req,res) => {
     try {
-        const student = await prisma.user.findMany({
-            where: {role: 'STUDENT'}, 
-            include: {studentInfo: true}
+        const student = await prisma.student.findMany({
+            where: {role: 'STUDENT'}
         });
         res.status(200).json(student)
     } catch (error) {
@@ -96,21 +82,27 @@ exports.getStudent = async (req,res) => {
 }
 
 exports.getStudentById = async (req,res) => {
-    const { id } = req.params
+
+  console.log("Request params:", req.params);
+    const { S_id } = req.params
     try {
-        const student = await prisma.user.findUnique({
-            where: {id: parseInt(id)},
-            include: {studentInfo: true}
+        const student = await prisma.student.findUnique({
+            where: {S_id: S_id}
+            
         });
+        console.log(student);
 
         if (!student) {
-          res.status(404),json({ message: `Id ${id} not found`})
+
+          res.status(404).json({ message: `Id ${S_id} not found`})
           return;
         }
 
         if ( student.role != 'STUDENT') {
-          return res.status(404).json({ message: `ID ${id} are not Student!!!!` });
+          
+          return res.status(404).json({ message: `ID ${S_id} are not Student!!!!` });
         } 
+        
         
         res.status(200).json(student)
         
@@ -122,14 +114,13 @@ exports.getStudentById = async (req,res) => {
 
 exports.getStudentByRoom = async (req,res) => {
   const { room } = req.params
-  const convertedRoom = parseInt(room)
+  const convertedRoom = room.replace(/\-/g,"/")
   try {
-      const student = await prisma.user.findMany({
-        where: {studentInfo: {room: convertedRoom} } ,
-        include: {studentInfo: true}
+      const student = await prisma.student.findMany({
+        where: { room: convertedRoom, } ,
       })
       if (student.length === 0) {
-        res.status(404).json({ message: `Room ${room} not found`});
+        res.status(404).json({ message: `Room ${convertedRoom} not found`});
         return;
       }
       res.status(200).json(student)
@@ -139,59 +130,36 @@ exports.getStudentByRoom = async (req,res) => {
   }
 }
 
-exports.getStudentByYear = async (req,res) => {
-  const { year } = req.params
-  const convertedYear = parseInt(year)
-  try {
-      const student = await prisma.user.findMany({
-        where: {studentInfo: {year: convertedYear} } ,
-        include: {studentInfo: true}
-      })
-      if (student.length === 0) {
-        res.status(404).json({ message: `Year ${year} not found`});
-        return;
-      }
-      res.status(200).json(student)
-  } catch (error) {
-      console.error("Error fetching student:", error.message);
-      res.status(400).json({ error: error.message });
-  }
-}
 
 exports.updateStudent = async (req, res) => {
-  const { id } = req.params;
-  const {name, studentIdcard,year,room} = req.body
+  const { S_id } = req.params;
+  const {S_firstname, S_lastname,S_password,S_phone,S_email,room} = req.body
 
   try {
-    const existingUser = await prisma.user.findUnique({
-      where: {id: parseInt(id)},
-      include: {studentInfo: true}
+    const existingUser = await prisma.student.findUnique({
+      where: {S_id: S_id}
     })
     if (!existingUser) {
-      return res.status(404).json({ message: `User with ID ${id} not found` });
+      return res.status(404).json({ message: `Student with ID ${S_id} not found` });
     }
 
 
     if ( existingUser.role != 'STUDENT') {
-      return res.status(404).json({ message: `ID ${id} are not Student!!!!` });
+      return res.status(404).json({ message: `ID ${S_id} are not Student!!!!` });
     }
     console.log(existingUser);
 
-
-
-
-    const updateStudent = await prisma.user.update({
-      where: { id: parseInt(id) },
-      include: {studentInfo: true},
+    const updateStudent = await prisma.student.update({
+      where: { S_id: (S_id) },
       data: {
-        name,
-        studentInfo:{
-        update: {
-          year, 
-          room, 
-          studentIdcard
-        }
-      } 
+        S_firstname: S_firstname,
+        S_lastname: S_lastname,
+        S_password: S_password,
+        S_phone: S_phone,
+        S_email: S_email,
+        room: room
+
+
       }
     })
 
@@ -203,53 +171,14 @@ exports.updateStudent = async (req, res) => {
 };
 
 
-exports.createStudentPlan = async (req, res) => {
-  const {studentPlanName, studentPlanYear } = req.body
-  try {
-
-    const newStudentPlan = await prisma.studentPlan.create({
-      data: {
-        studentPlanName,
-        studentPlanYear
-      } 
-    });
-    res.status(201).json(newStudentPlan);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-  
-}
-
-exports.updateStudentPlan = async (req, res) => {
-  const { id } = req.params;
-  const { category, group, course } = req.body
-  console.log(category,group,course);
-  try {
-      const updateStudentPlan = await prisma.studentPlan.update({
-        where: { id: parseInt(id)},
-        include: {studentPlan: true},
-        data: {
-          categoryName: category.categoryName,
-          groupName: group.groupName,
-          courseName: course.courseName
-  }
-  
-});
-
-      res.status(201).json(updateStudentPlan)
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
-
 exports.deleteStudent = async (req, res) => {
   console.log("Request params:", req.params);
-  const { S_id, S_username } = req.params;
+  const { S_id } = req.params;
 
   try {
     // Check if the student with the given ID and username exists
     const existingStudent = await prisma.student.findFirst({
-      where: { S_id: S_id, S_username: S_username },
+      where: { S_id: S_id},
     });
 
     if (!existingStudent) {
@@ -258,12 +187,8 @@ exports.deleteStudent = async (req, res) => {
 
     // Delete the student
     await prisma.student.delete({
-      where: {
-        S_id_S_username: {
-          S_id: S_id,
-          S_username: S_username
-        }
-      }
+      where: {S_id: S_id}
+      
     });
 
     return res.status(200).json({ message: `Student with ID ${S_id} has been deleted successfully` });

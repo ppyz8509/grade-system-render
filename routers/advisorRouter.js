@@ -2,14 +2,10 @@ const express = require("express");
 const router = express.Router();
 const { 
     createStudent,
-    getStudent,
+    getAllStudents,
     getStudentById,
     getStudentByRoom,
-    getStudentByYear,
     updateStudent,
-
-    createStudentPlan,
-    updateStudentPlan,
     deleteStudent,
 } = require ("../controllers/advisorController");
 
@@ -19,17 +15,20 @@ const checkRole = require("../middlewares/checkRole");
 
 
 router.post("/createStudent",createStudent);
-router.get("/getStudent", checkRole(['ADVISOR']), getStudent);
-router.get("/getStudentById/:id", checkRole(['ADVISOR']), getStudentById);
-router.get("/getStudentByRoom/:room", checkRole(['ADVISOR']), getStudentByRoom);
-router.get("/getStudentByYear/:year", checkRole(['ADVISOR']), getStudentByYear);
-router.put("/updateStudent/:id", checkRole(['ADVISOR']), updateStudent);
+router.get("/getAllStudents", getAllStudents);
+router.get("/getStudentById/:S_id", getStudentById);
+router.get("/getStudentByRoom/:room", getStudentByRoom);
+router.put("/updateStudent/:S_id", updateStudent);
+router.delete("/deleteStudent/:S_id", deleteStudent);
 
-router.post("/createStudentPlan", createStudentPlan);
+//dont fis
 
-router.put("/updateStudentPlan/:id", updateStudentPlan);
 
-router.delete("/deleteStudent/:S_id/:S_username", deleteStudent);
+
+
+
+
+
 
 
 
