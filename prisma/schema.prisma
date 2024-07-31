@@ -138,6 +138,7 @@ model Group {
   //subgroups: เป็นการเชื่อมโยงแบบ One-to-Many กับ Group ในความสัมพันธ์แบบ self-referential หมายถึงกลุ่มหนึ่งสามารถมีหลายกลุ่มย่อยได้
 }
 
+
 model Course {
   id           Int      @id @default(autoincrement())
   courseCode   String
@@ -153,3 +154,4 @@ model Course {
   groupId      Int?
   
 }
+
