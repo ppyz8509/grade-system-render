@@ -11,7 +11,7 @@ const {
 
 
 const checkRole = require("../middlewares/checkRole");
-//, checkRole(['COURSE_INSTRUCTOR']) เช็คโรล เก็บไว้ใช้ตอนทำ login advice เสร้จ
+//, checkRole(['COURSE_INSTRUCTOR']) เช็คโรล เก็บไว้ใช้ตอนทำ login advice เสร้จsdf
 
 
 router.post("/createStudent",createStudent);
