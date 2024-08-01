@@ -4,7 +4,9 @@ const {
   createMajor,
   getAllMajors,
   getMajorById,
-  updateMajorStatus,
+  getCategoriesByMajorId, 
+  getGroupsByCategoryId,
+  getCoursesByGroupId,
   updateMajor,
   deleteMajor,
   createCategory,
@@ -29,6 +31,7 @@ const checkRole = require("../middlewares/checkRole");
 ///major
 router.post("/createMajor",createMajor);
 router.get("/getMajorById/:id",getMajorById);
+router.get("/categories/major/:majorId", getCategoriesByMajorId); 
 router.get("/getAllMajors",getAllMajors);
 router.put("/updateMajor/:id",updateMajor);
 router.delete("/deleteMajor/:id",deleteMajor);
@@ -46,6 +49,7 @@ router.delete("/deleteCategory/:id",deleteCategory) ;
 router.post("/createGroup",createGroup) ;
 router.post("/createSubgroup/subgroup", createSubgroup);
 router.get("/getAllGroups",getAllGroups);
+router.get("/group/category/:categoryId",getGroupsByCategoryId)
 router.put("/updateGroup/:id",updateGroup ) ;
 router.delete("/deleteGroup/:id",deleteGroup) ;
 
@@ -56,6 +60,7 @@ router.get("/getCourseById/:id",getCourseById );
 router.get("/getAllCourses",getAllCourses);
 router.put("/updateCourse/:id",updateCourse) ;
 router.delete("/deleteCourse/:id",deleteCourse) ;
+router.get('/courses/group/:groupId', getCoursesByGroupId);
 
 
 

@@ -656,4 +656,95 @@ exports.deleteCategory = async (req, res) => {
 };
 
 
+// GET CATEGORY BY MAJORID
+exports.getCategoriesByMajorId = async (req, res) => {
+  const { majorId } = req.params;
+
+  try {
+    const categories = await prisma.category.findMany({
+      where: { majorId: parseInt(majorId) },
+    });
+
+    return res.status(200).json({ categories });
+  } catch (error) {
+    console.error('Error fetching categories:', error.message, error.stack);
+    res.status(500).json({ error: 'Unable to fetch categories', details: error.message });
+  }
+};
+
+// ฟังก์ชันสำหรับจัดกลุ่มและจัดเรียงกลุ่ม
+const organizeGroups = (groups) => {
+  const groupMap = {};
+  const rootGroups = [];
+
+  groups.forEach(group => {
+    group.subgroups = [];
+    groupMap[group.id] = group;
+  });
+
+  groups.forEach(group => {
+    if (group.parentGroupId) {
+      if (groupMap[group.parentGroupId]) {
+        groupMap[group.parentGroupId].subgroups.push(group);
+      }
+    } else {
+      rootGroups.push(group);
+    }
+  });
+
+  return rootGroups;
+};
+
+// GET GROUP BY CATEGORY ID 
+exports.getGroupsByCategoryId = async (req, res) => {
+  const { categoryId } = req.params;
+
+  try {
+    const groups = await prisma.group.findMany({
+      where: { categoryId: parseInt(categoryId) },
+      include: {
+        subgroups: {
+          include: {
+            courses: true,
+          },
+        },
+        courses: true,
+      },
+    });
+
+    if (!groups.length) {
+      return res.status(404).json({ error: 'Groups not found for the given category ID' });
+    }
+
+    const organizedGroups = organizeGroups(groups);
+
+    return res.status(200).json({ groups: organizedGroups });
+  } catch (error) {
+    console.error('Error fetching groups:', error.message, error.stack);
+    res.status(500).json({ error: 'Unable to fetch groups', details: error.message });
+  }
+};
+
+
+// GET COURSES BY GROUP ID
+exports.getCoursesByGroupId = async (req, res) => {
+  const { groupId } = req.params;
+
+  try {
+    const courses = await prisma.course.findMany({
+      where: { groupId: parseInt(groupId) },
+    });
+
+    if (!courses.length) {
+      return res.status(404).json({ error: 'Courses not found for the given group ID' });
+    }
+
+    return res.status(200).json({ courses });
+  } catch (error) {
+    console.error('Error fetching courses:', error.message, error.stack);
+    res.status(500).json({ error: 'Unable to fetch courses', details: error.message });
+  }
+};
+
+
 
