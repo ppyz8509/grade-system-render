@@ -24,7 +24,7 @@ enum Role {
 
 model Admin {
   Admin_id      Int      @id @default(autoincrement())
-  A_fristname   String
+  A_firstname   String
   A_lastname    String
   A_username    String   
   A_password    String  
@@ -34,9 +34,9 @@ model Admin {
 }
 
 
-model COURSE_INSTRUCTOR {
+model CourseInstructor {
   C_id          Int      @id @default(autoincrement())
-  C_fristname   String
+  C_firstname   String
   C_lastname    String
   C_username    String   
   C_password    String  
@@ -46,7 +46,7 @@ model COURSE_INSTRUCTOR {
 }
 
 model Student {
-  S_id          String
+  S_id          String      @id
   S_firstname   String
   S_lastname    String
   S_password    String
@@ -54,10 +54,11 @@ model Student {
   S_phone       String?     // อนุญาตให้เป็น null
   S_email       String?     // อนุญาตให้เป็น null
 
-  classroom     Classroom   @relation(fields: [room],references: [roomname])
+  classroom     Classroom   @relation("roomname",fields: [room],references: [roomname])
   room          String          
 
-  @@id([S_id])
+//  roomName      Classroom?   @relation("studentName")
+  
 }
 
 model Teacher {
@@ -66,34 +67,37 @@ model Teacher {
   T_lastname      String 
   T_username      String      
   T_password      String  
-  role          Role        @default(TEACHER)
+  role            Role        @default(TEACHER)
   T_phone         String?
   T_email         String? 
 
   advisorrooms    Advisor[]
+//  room                Classroom[]   @relation("advisorName")
 }
 
 model Classroom {
   roomname      String     @id 
 
-  teachers      Advisor[]
-  students      Student[] 
+  teachers            Advisor[]     @relation("room")
+  students            Student[]     @relation("roomname")
 }
 
 model Advisor {
   Advisor_id          Int           @id @default(autoincrement())
+  role                Role          @default(ADVISOR)
 
   teacher             Teacher       @relation(fields: [teacherId], references: [T_id])
   teacherId           Int
-  teacherfirstName    String
-  teacherlastName     String
+  teacherfirstName    String?
+  teacherlastName     String?
 
-  classroom           Classroom     @relation(fields: [roomName], references: [roomname])
+  classroomname          Classroom     @relation("room",fields: [roomName], references: [roomname])
   roomName            String
 
-  role                Role          @default(ADVISOR)
-
+  
 }
+
+
 
 
 //major by PPYz
