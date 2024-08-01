@@ -517,7 +517,7 @@ exports.createCategory = async (req, res) => {
     if (!majorExists) {
       return res.status(404).json({ error: `Major with ID ${category.majorId} not found` });
     }
-
+ 
     const newCategory = await prisma.category.create({
       data: {
         majorId: category.majorId,

@@ -3,11 +3,10 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const authRouter = require("./routers/authRouter");
 const userRouter = require("./routers/userRouter");
-
 const advisorRouter = require("./routers/advisorRouter");
-
-
+const course_in_Router = require("./routers/course_in_Router");
 const majorRouter = require("./routers/majorRouter");
+
 
 dotenv.config();
 
