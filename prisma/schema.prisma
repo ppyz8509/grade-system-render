@@ -18,6 +18,8 @@ enum Role {
   STUDENT
   ADVISOR
   COURSE_INSTRUCTOR
+
+  TEACHER
 }
 
 model Admin {
@@ -59,18 +61,16 @@ model Student {
 }
 
 model Teacher {
-  T_id            Int         @default(autoincrement())
-  T_firstname     String
-  T_lastname      String
+  T_id            Int        @id @default(autoincrement())
+  T_firstname     String 
+  T_lastname      String 
   T_username      String      
   T_password      String  
-  role            Role        @default(ADVISOR)
-  T_phone         Int?
+  role          Role        @default(TEACHER)
+  T_phone         String?
   T_email         String? 
 
   advisorrooms    Advisor[]
-
-  @@id([T_id , T_firstname , T_lastname])
 }
 
 model Classroom {
@@ -81,15 +81,17 @@ model Classroom {
 }
 
 model Advisor {
-  Advisor_id                Int         @id @default(autoincrement())
+  Advisor_id          Int           @id @default(autoincrement())
 
-  teacher             Teacher     @relation(fields: [teacherId, teacherfirstName, teacherlastName], references: [T_id,T_firstname,T_lastname])
+  teacher             Teacher       @relation(fields: [teacherId], references: [T_id])
   teacherId           Int
   teacherfirstName    String
   teacherlastName     String
 
   classroom           Classroom     @relation(fields: [roomName], references: [roomname])
   roomName            String
+
+  role                Role          @default(ADVISOR)
 
 }
 

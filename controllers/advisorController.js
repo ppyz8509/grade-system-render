@@ -1,7 +1,6 @@
-const { Role } = require("@prisma/client");
 const prisma = require("../models/prisma");
 const bcrypt = require("bcryptjs");
-const { json } = require("express");
+
 
 
 exports.createStudent = async (req, res) => {

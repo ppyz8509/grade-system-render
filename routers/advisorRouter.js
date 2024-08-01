@@ -26,11 +26,4 @@ router.delete("/deleteStudent/:S_id", deleteStudent);
 
 
 
-
-
-
-
-
-
-
 module.exports = router;
