@@ -15,7 +15,6 @@ const {
   updateCategory,
   deleteCategory,
   createGroup,
-  createSubgroup,
   getAllGroups,
   updateGroup,
   deleteGroup,
@@ -47,7 +46,6 @@ router.delete("/deleteCategory/:id",deleteCategory) ;
 
 // //Group
 router.post("/createGroup",createGroup) ;
-router.post("/createSubgroup/subgroup", createSubgroup);
 router.get("/getAllGroups",getAllGroups);
 router.get("/group/category/:categoryId",getGroupsByCategoryId)
 router.put("/updateGroup/:id",updateGroup ) ;

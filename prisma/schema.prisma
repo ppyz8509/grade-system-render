@@ -17,7 +17,6 @@ enum Role {
   STUDENT
   ADVISOR
   COURSE_INSTRUCTOR
-
   TEACHER
 }
 
@@ -109,73 +108,51 @@ model Advisor {
 }
 
 
-//major by PPYz
 enum Status {
   ACTIVE
   INACTIVE
 }
 
 model Major {
-
-  id              Int      @id @default(autoincrement())  //ฟิลด์
-  majorNameTH     String
-  majorNameENG    String
-  majorYear       String
-  majorUnit       String
-  status          Status
-  majorCode       String
-  majorSupervisor String
-  categories      Category[] ///เชื่อมต่อกับ Category ผ่านฟิลด์ categories
-  courses         Course[]//เชื่อมต่อกับ Course ผ่านฟิลด์ courses
+  Major_id       String   @id @unique  // เปลี่ยนเป็น String
+  majorNameTH    String
+  majorNameENG   String
+  majorYear      Int
+  majorUnit      Int
+  status         Status
+  categories     Category[]  // เชื่อมต่อกับ Category ผ่านฟิลด์ categories
+  courses        Course[]  // เชื่อมต่อกับ Course ผ่านฟิลด์ courses
 }
 
 model Category {
   id           Int      @id @default(autoincrement())
   categoryName String
-  categoryUnit String
-  major        Major    @relation(fields: [majorId], references: [id]) //เชื่อมต่อกับ Major ผ่านฟิลด์ major
-  majorId      Int
-  groups       Group[]//เชื่อมต่อกับ Group ผ่านฟิลด์ groups
-  courses      Course[]//เชื่อมต่อกับ Course ผ่านฟิลด์ courses
-
+  categoryUnit Int
+  major        Major    @relation(fields: [majorId], references: [Major_id])  // เชื่อมต่อกับ Major ผ่านฟิลด์ major
+  majorId      String   // เปลี่ยนเป็น String
+  groups       Group[]  // เชื่อมต่อกับ Group ผ่านฟิลด์ groups
+  courses      Course[]  // เชื่อมต่อกับ Course ผ่านฟิลด์ courses
 }
+
 model Group {
   id            Int      @id @default(autoincrement())
   groupName     String
-  groupUnit     String
-  category      Category @relation(fields: [categoryId], references: [id])  //เชื่อมต่อกับ Category ผ่านฟิลด์ category
+  groupUnit     Int
+  category      Category @relation(fields: [categoryId], references: [id])  // เชื่อมต่อกับ Category ผ่านฟิลด์ category
   categoryId    Int
-  parentGroup   Group?   @relation("Subgroups", fields: [parentGroupId], references: [id])//เชื่อมต่อกับตัวเองผ่านฟิลด์ parentGroup และ subgroups
-  parentGroupId Int? 
-  subgroups     Group[]  @relation("Subgroups")
-  courses       Course[]//เชื่อมต่อกับ Course ผ่านฟิลด์ courses
-
-  ///parentGroup: เป็นการเชื่อมโยงแบบ Many-to-One กับ Group โดยใช้ parentGroupId เป็น foreign key หมายถึงกลุ่มย่อยสามารถเชื่อมโยงกับกลุ่มหลักได้หนึ่งกลุ่ม
-  //subgroups: เป็นการเชื่อมโยงแบบ One-to-Many กับ Group ในความสัมพันธ์แบบ self-referential หมายถึงกลุ่มหนึ่งสามารถมีหลายกลุ่มย่อยได้
+  courses       Course[]  // เชื่อมต่อกับ Course ผ่านฟิลด์ courses
 }
-
 
 model Course {
-  id           Int      @id @default(autoincrement())
-  courseCode   String
-  courseNameTH String
+  Course_id     String   @id @unique  // เปลี่ยนเป็น String
+  courseNameTH  String
   courseNameENG String
-  courseYear   String
-  courseUnit   Int
-  major        Major    @relation(fields: [majorId], references: [id])//เชื่อมต่อกับ Major ผ่านฟิลด์ major
-  majorId      Int
-  category     Category @relation(fields: [categoryId], references: [id])//เชื่อมต่อกับ Category ผ่านฟิลด์ category
-  categoryId   Int
-  group        Group?   @relation(fields: [groupId], references: [id])//เชื่อมต่อกับ Group ผ่านฟิลด์ group
-  groupId      Int?
+  courseYear    String  // เช่น 3(3-0-6)
+  courseUnit    Int     // เช่น 3
+  major         Major    @relation(fields: [majorId], references: [Major_id])  // เชื่อมต่อกับ Major ผ่านฟิลด์ major
+  majorId       String   // เปลี่ยนเป็น String
+  category      Category @relation(fields: [categoryId], references: [id])  // เชื่อมต่อกับ Category ผ่านฟิลด์ category
+  categoryId    Int
+  group         Group?   @relation(fields: [groupId], references: [id])  // เชื่อมต่อกับ Group ผ่านฟิลด์ group
+  groupId       Int?
 }
-
-
-//Major หนึ่งสามารถมีหลาย Category (One-to-Many)
-//Category หนึ่งสามารถมีหลาย Group (One-to-Many)
-//Group หนึ่งสามารถมีหลาย Subgroups (One-to-Many) และสามารถเชื่อมโยงกับ Group หลักได้หนึ่ง Group
-//Major หนึ่งสามารถมีหลาย Course (One-to-Many)
-
-
-
-
