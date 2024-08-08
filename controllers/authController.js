@@ -1,58 +1,48 @@
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient(); 
-const jwt = require('jsonwebtoken'); 
-const bcrypt = require('bcryptjs'); 
-const JWT_SECRET = process.env.JWT_SECRET;
+const jwt = require('jsonwebtoken');
+const prisma = new PrismaClient();
 
+// โหลดตัวแปรสภาพแวดล้อม
+require('dotenv').config();
+
+const tables = [
+  { model: 'admin', idField: 'admin_id' },
+  { model: 'course_in', idField: 'courseinstructor_id' },
+  { model: 'student', idField: 'student_id' },
+  { model: 'teacher', idField: 'teacher_id' }
+];
+
+const findUser = async (model, username) => {
+  return await prisma[model].findUnique({
+    where: { username }
+  });
+};
 
 exports.login = async (req, res) => {
   const { username, password } = req.body;
 
-  if (!username || !password) {
-    return res.status(400).json({ message: 'Username and password are required' });
-  }
-
   try {
-    // ค้นหาผู้ใช้
-    let user = await prisma.student.findUnique({
-      where: { S_id: username },
-    }) || await prisma.admin.findFirst({
-      where: { A_username: username },
-    }) || await prisma.courseInstructor.findFirst({
-      where: { C_username: username },
-    }) || await prisma.teacher.findFirst({
-      where: { T_username: username },
-    });
-
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid username or password' });
+    for (const table of tables) {
+      let user = await findUser(table.model, username);
+      if (user && user.password === password) {
+        const token = jwt.sign(
+          {
+            id: user[table.idField],
+            username: user.username,
+            firstname: user.firstname,
+            lastname: user.lastname
+          },
+          process.env.JWT_SECRET,
+          { expiresIn: '1h' }
+        );
+        const { password, ...userData } = user;
+        return res.status(200).json({ message: 'Login successful', user: userData, token });
+      }
     }
 
-    // ตรวจสอบรหัส
-    const validPassword = await bcrypt.compare(
-      password,
-      user.S_password || user.A_password || user.C_password || user.T_password
-    );
+    return res.status(404).json({ message: 'User not found' });
 
-    if (!validPassword) {
-      return res.status(401).json({ message: 'Invalid username or password' });
-    }
-
-    // สร้างToken
-    const token = jwt.sign(
-      {
-        userId: user.S_id || user.Admin_id || user.C_id || user.T_id,
-        role: user.role,  
-        firstname: user.S_firstname || user.A_firstname || user.C_firstname || user.T_firstname,
-        lastname: user.S_lastname || user.A_lastname || user.C_lastname || user.T_lastname,
-      },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
-    res.json({ token });
   } catch (error) {
-    console.error("Error during login:", error.message);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Server error', error });
   }
 };

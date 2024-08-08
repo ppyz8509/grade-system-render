@@ -2,14 +2,13 @@ require('dotenv').config();
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { login } = require('../controllers/authController');
-const checkRole = require('../middlewares/checkRole');
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const router = express.Router();
 
-router.post("/login", login);
+router.post('/login', login);
 
-router.get('/decode-token', checkRole(['ADMIN', 'ADVISOR', 'STUDENT', 'COURSE_INSTRUCTOR']), async (req, res) => {
+router.get('/decode-token', async (req, res) => {
     try {
         const token = req.headers.authorization.split(" ")[1];
         const decoded = jwt.verify(token, JWT_SECRET);
@@ -24,6 +23,5 @@ router.get('/decode-token', checkRole(['ADMIN', 'ADVISOR', 'STUDENT', 'COURSE_IN
         res.status(500).json({ message: "Internal server error" });
     }
 });
-
 
 module.exports = router;

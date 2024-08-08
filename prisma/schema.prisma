@@ -1,8 +1,3 @@
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,147 +7,167 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  ADMIN
-  STUDENT
-  ADVISOR
-  COURSE_INSTRUCTOR
-  TEACHER
+
+
+enum Grade {
+  A
+  B
+  B_plus
+  C
+  C_plus
+  D
+  D_plus
+  E
+  F
 }
 
-model Admin {
-  Admin_id      Int      @id @default(autoincrement())
-  A_firstname   String
-  A_lastname    String
-  A_username    String   
-  A_password    String  
-  role          Role        @default(ADMIN)
-  A_phone       Int?
-  A_email       String? 
+model admin {
+  admin_id              Int     @id @default(autoincrement())
+  username              String  @unique(map: "admin_username") @db.VarChar(255)
+  password              String  @db.VarChar(255)
+  firstname             String  @db.VarChar(255)
+  lastname              String  @db.VarChar(255)
+  phone                 String? 
+  email                 String? @db.VarChar(255)
 }
 
+model advisor {
+  advisor_id Int     @id @default(autoincrement())
+  teacher_id Int
+  sec_id     Int
+  teacher    teacher @relation(fields: [teacher_id], references: [teacher_id], onUpdate: Restrict, map: "advisor_ibfk_1")
+  section    section @relation(fields: [sec_id], references: [sec_id], onUpdate: Restrict, map: "advisor_ibfk_2")
 
-model CourseInstructor {
-  C_id          Int      @id @default(autoincrement())
-  C_firstname   String
-  C_lastname    String
-  C_username    String   
-  C_password    String  
-  role          Role        @default(COURSE_INSTRUCTOR)
-  C_phone       Int?
-  C_email       String? 
+  @@index([sec_id], map: "advisor_sec_id_idx")
+  @@index([teacher_id], map: "advisor_teacher_id_idx")
 }
 
-model Student {
-  S_id          String      @id
-  S_firstname   String
-  S_lastname    String
-  S_password    String
-  role          Role        @default(STUDENT)
-  S_phone       String?     // อนุญาตให้เป็น null
-  S_email       String?     // อนุญาตให้เป็น null
+model category {
+  category_id   Int           @id @default(autoincrement())
+  category_name String        @db.VarChar(255)
+  category_unit Int
+  major_id      Int
+  major         major         @relation(fields: [major_id], references: [major_id], onUpdate: Restrict, map: "category_ibfk_1")
+  course        course[]
+  group_major   group_major[]
 
-  classroom     Classroom   @relation("roomname",fields: [room],references: [roomname])
-  room          String          
-
-//  roomName      Classroom?   @relation("studentName")
-  
+  @@index([major_id], map: "category_major_id_idx")
 }
 
-model Teacher {
-  T_id            Int        @id @default(autoincrement())
-  T_firstname     String 
-  T_lastname      String 
-  T_username      String      
-  T_password      String  
-  role            Role        @default(TEACHER)
-  T_phone         String?
-  T_email         String? 
+model course {
+  course_id        Int            @id @default(autoincrement())
+  courseNameTH     String         @db.VarChar(255)
+  courseNameENG    String         @db.VarChar(255)
+  courseUnit       Int
+  courseTheory     Int
+  coursePractice   Int
+  categoryResearch Int
+  category_id      Int?
+  group_id         Int?
+  category         category?      @relation(fields: [category_id], references: [category_id], onDelete: Restrict, onUpdate: Restrict, map: "course_ibfk_2")
+  group_major      group_major?   @relation(fields: [group_id], references: [group_id], onDelete: Restrict, onUpdate: Restrict, map: "course_ibfk_3")
+  major_course     major_course[]
+  register         register[]
 
-  advisorrooms    Advisor[]
-//  room                Classroom[]   @relation("advisorName")
+  @@index([category_id], map: "course_category_id_idx")
+  @@index([group_id], map: "course_group_id_idx")
 }
 
-model Classroom {
-  roomname      String     @id 
-
-  teachers            Advisor[]     @relation("room")
-  students            Student[]     @relation("roomname")
-  // advisor             Teacher       @relation("advisorName",fields: [advisorId], references: [T_id])
-  // advisorId           Int           
-  // advisorfirstName    String?
-  // advisorlastName     String?
-
-  advisor             Advisor       @relation(fields: [advisorId], references: [Advisor_id])
-  advisorId           Int
-
-  // student             Student       @relation("studentName",fields: [studentId], references: [S_id])
-  // studentId           String        @unique
-  // studentfirstName    String?
-  // studentlastName     String?
+model course_in {
+  courseinstructor_id       Int     @id @default(autoincrement())
+  username                  String  @unique(map: "course_in_username") @db.VarChar(255)
+  password                  String  @db.VarChar(255)
+  firstname                 String  @db.VarChar(255)
+  lastname                  String  @db.VarChar(255)
+  phone                     String?
+  email                     String? @db.VarChar(255)
 }
 
-model Advisor {
-  Advisor_id          Int           @id @default(autoincrement())
-  role                Role          @default(ADVISOR)
+model group_major {
+  group_id    Int      @id @default(autoincrement())
+  group_name  String   @db.VarChar(255)
+  group_unit  Int
+  category_id Int
+  course      course[]
+  category    category @relation(fields: [category_id], references: [category_id], onUpdate: Restrict, map: "group_major_ibfk_1")
 
-  teacher             Teacher       @relation(fields: [teacherId], references: [T_id])
-  teacherId           Int
-  teacherfirstName    String?
-  teacherlastName     String?
-
-  classroomname          Classroom     @relation("room",fields: [roomName], references: [roomname])
-  roomName            String
-  rooms               Classroom[]
-  
+  @@index([category_id], map: "group_major_category_id_idx")
 }
 
-
-enum Status {
-  ACTIVE
-  INACTIVE
+model major {
+  major_id     Int            @id @default(autoincrement())
+  major_code   String         @unique @db.VarChar(255)
+  majorNameTH  String         @db.VarChar(255)
+  majorNameENG String         @db.VarChar(255)
+  majorYear    Int
+  majorUnit    Int
+  status       String?        @db.VarChar(255)
+  category     category[]
+  major_course major_course[]
+  section      section[]
 }
 
-model Major {
-  Major_id       String   @id @unique  // เปลี่ยนเป็น String
-  majorNameTH    String
-  majorNameENG   String
-  majorYear      Int
-  majorUnit      Int
-  status         Status
-  categories     Category[]  // เชื่อมต่อกับ Category ผ่านฟิลด์ categories
-  courses        Course[]  // เชื่อมต่อกับ Course ผ่านฟิลด์ courses
+model major_course {
+  mc_id     Int    @id @default(autoincrement())
+  major_id  Int
+  course_id Int
+  major     major  @relation(fields: [major_id], references: [major_id], onUpdate: Restrict, map: "major_course_ibfk_1")
+  course    course @relation(fields: [course_id], references: [course_id], onUpdate: Restrict, map: "major_course_ibfk_2")
+
+  @@index([course_id], map: "major_course_course_id_idx")
+  @@index([major_id], map: "major_course_major_id_idx")
 }
 
-model Category {
-  id           Int      @id @default(autoincrement())
-  categoryName String
-  categoryUnit Int
-  major        Major    @relation(fields: [majorId], references: [Major_id])  // เชื่อมต่อกับ Major ผ่านฟิลด์ major
-  majorId      String   // เปลี่ยนเป็น String
-  groups       Group[]  // เชื่อมต่อกับ Group ผ่านฟิลด์ groups
-  courses      Course[]  // เชื่อมต่อกับ Course ผ่านฟิลด์ courses
+model register {
+  register_id Int     @id @default(autoincrement())
+  semester    Int
+  year        Int
+  grade       Grade?
+  teacher_id  Int
+  course_id   Int
+  student_id  Int
+  teacher     teacher @relation(fields: [teacher_id], references: [teacher_id], onUpdate: Restrict, map: "register_ibfk_1")
+  student     student @relation(fields: [student_id], references: [student_id], onUpdate: Restrict, map: "register_ibfk_2")
+  course      course  @relation(fields: [course_id], references: [course_id], onUpdate: Restrict, map: "register_ibfk_3")
+
+  @@index([course_id], map: "register_course_id_idx")
+  @@index([student_id], map: "register_student_id_idx")
+  @@index([teacher_id], map: "register_teacher_id_idx")
 }
 
-model Group {
-  id            Int      @id @default(autoincrement())
-  groupName     String
-  groupUnit     Int
-  category      Category @relation(fields: [categoryId], references: [id])  // เชื่อมต่อกับ Category ผ่านฟิลด์ category
-  categoryId    Int
-  courses       Course[]  // เชื่อมต่อกับ Course ผ่านฟิลด์ courses
+model section {
+  sec_id   Int       @id @default(autoincrement())
+  sec_name String    @db.VarChar(255)
+  advisor  advisor[]
+  student  student[]
+  major_id Int
+  major    major      @relation(fields: [major_id], references: [major_id], onUpdate: Restrict, map: "major_ibfk_1")
 }
 
-model Course {
-  Course_id     String   @id @unique  // เปลี่ยนเป็น String
-  courseNameTH  String
-  courseNameENG String
-  courseYear    String  // เช่น 3(3-0-6)
-  courseUnit    Int     // เช่น 3
-  major         Major    @relation(fields: [majorId], references: [Major_id])  // เชื่อมต่อกับ Major ผ่านฟิลด์ major
-  majorId       String   // เปลี่ยนเป็น String
-  category      Category @relation(fields: [categoryId], references: [id])  // เชื่อมต่อกับ Category ผ่านฟิลด์ category
-  categoryId    Int
-  group         Group?   @relation(fields: [groupId], references: [id])  // เชื่อมต่อกับ Group ผ่านฟิลด์ group
-  groupId       Int?
+model student {
+  student_id              Int        @id 
+  username                String     @unique(map: "student_username") @db.VarChar(255)
+  password                String     @db.VarChar(255)
+  firstname               String     @db.VarChar(255)
+  lastname                String     @db.VarChar(255)      
+  phone                   String? 
+  email                   String?    @db.VarChar(255)
+  sec_id                  Int
+  register                register[]
+  section                 section    @relation(fields: [sec_id], references: [sec_id], onUpdate: Restrict, map: "student_ibfk_3")
+
+  @@index([sec_id], map: "student_sec_id_idx")
+}
+
+model teacher {
+  teacher_id              Int        @id @default(autoincrement())
+  username                String     @unique(map: "teacher_username") @db.VarChar(255)
+  password                String     @db.VarChar(255)
+  firstname               String     @db.VarChar(255)
+  lastname                String     @db.VarChar(255)
+  phone                   String? 
+  email                   String?    @db.VarChar(255)
+  advisor                 advisor[]
+  register                register[]
+
 }

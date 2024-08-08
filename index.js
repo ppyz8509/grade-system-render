@@ -6,7 +6,7 @@ const userRouter = require("./routers/userRouter");
 const advisorRouter = require("./routers/advisorRouter");
 const course_in_Router = require("./routers/course_in_Router");
 const majorRouter = require("./routers/majorRouter");
-
+const authenticateToken = require('./middlewares/authenticateToken');
 const app = express();
 
 // CORS configuration
@@ -26,6 +26,12 @@ app.use("/api", advisorRouter);
 app.use("/api", majorRouter);
 app.use("/api", course_in_Router);
 
+
+// ใช้ middleware สำหรับการตรวจสอบสิทธิ์
+app.use('/protected-route', authenticateToken, (req, res) => {
+    // เข้าถึง req.user ที่นี่
+    res.status(200).json({ message: 'Access granted', user: req.user });
+  });
 app.get("/", (req, res) => {
     res.send("test6442859030");
 });
