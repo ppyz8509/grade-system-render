@@ -1,163 +1,85 @@
-const prisma = require("../models/prisma");
-const bcrypt = require("bcryptjs");
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-exports.createTeacher = async (req, res) => {
-
-    console.log("Request Body:", req.body);
-  
-    const { 
-      T_firstname,
-      T_lastname,
-      T_username,
-      T_password,
-      T_phone,
-      T_email,
-     } = req.body;
-    
-    
-  
-    const existingTeacher = await prisma.teacher.findFirst({
-      where: { T_firstname },
-    })
-  
-    if (existingTeacher) {
-
-        const checkLastName = await prisma.teacher.findFirst({
-            where: { T_lastname },
-          })
-          if (checkLastName) {
-             return res.status(400).json({message: "Teacher already!!!!"})
-          }
-     
-      
-    }
-  
-    try {
-    
-      const hashedPassword = await bcrypt.hash(T_password, 10);
-  
-      const newTeacher = await prisma.teacher.create({
-        data: 
-        {
-          T_firstname: T_firstname,
-          T_lastname: T_lastname,
-          T_username: T_username,
-          T_password: hashedPassword,
-          T_phone: T_phone,
-          T_email: T_email,
-        },
-      });
-  
-      return res.status(201).json(newTeacher);
-    } catch (error) {
-      console.error("Error creating Teacher:", error);
-      res.status(400).json({ error: error.message });
-    }
-};
-
-exports.getAllTeachers = async (req,res) => {
-    try {
-        const teachers = await prisma.teacher.findMany({
-            where: {role: 'TEACHER'}
-        });
-        res.status(200).json(teachers)
-    } catch (error) {
-        console.error("Error fetching teacher:", error.message);
-        res.status(400).json({ error: error.message });
-    }
-}
-
-exports.getTeacherById = async (req,res) => {
-
-    console.log("Request params:", req.params);
-      const { T_id } = req.params
-      try {
-          const teacher = await prisma.teacher.findUnique({
-              where: {T_id: parseInt(T_id)}
-              
-          });
-  
-          if (!teacher) {
-  
-            res.status(404).json({ message: `Id ${T_id} not found`})
-            return;
-          }
-  
-          if ( teacher.role != 'TEACHER') {
-            
-            return res.status(404).json({ message: `ID ${T_id} are not Student!!!!` });
-          } 
-          
-          
-          res.status(200).json(teacher)
-          
-      } catch (error) {
-          console.error("Error fetching teacher:", error.message);
-          res.status(400).json({ error: error.message });
-      }
-}
-
-exports.updateTeacher = async (req, res) => {
-  const { T_id } = req.params;
-  const {T_firstname, T_lastname,T_password,T_phone,T_email} = req.body
-
+// Create an Admin
+exports.createAdmin = async (req, res) => {
   try {
-    const existingTeacher = await prisma.teacher.findUnique({
-        where: {T_id: parseInt(T_id)}
-    })
-    if (!existingTeacher) {
-      return res.status(404).json({ message: `Teacher with ID ${T_id} not found` });
-    }
-
-
-    if ( existingTeacher.role != 'TEACHER') {
-      return res.status(404).json({ message: `ID ${T_id} are not Teacher!!!!` });
-    }
-
-    const updateTeacher = await prisma.teacher.update({
-      where: {T_id: parseInt(T_id)},
+    const { username,password, firstname, lastname, role, phone, email } = req.body;
+    const admin = await prisma.admin.create({
       data: {
-        T_firstname: T_firstname,
-        T_lastname: T_lastname,
-        T_password: T_password,
-        T_phone: T_phone,
-        T_email: T_email,
-
-
-      }
-    })
-
-      res.status(200).json({message: `update Success!!!!`, updateTeacher})
+        username,
+        password,
+        firstname,
+        lastname,
+        role,
+        phone,
+        email,
+      },
+    });
+    res.status(201).json(admin);
   } catch (error) {
-    console.error("Error updating Teacher:", error.message);
-    res.status(400).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
+// Read All Admins
+exports.getAdmins = async (req, res) => {
+  try {
+    const admins = await prisma.admin.findMany();
+    res.status(200).json(admins);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
-exports.deleteTeacher = async (req, res) => {
-    console.log("Request params:", req.params);
-    const { T_id } = req.params;
-  
-    try {
-      // Check if the student with the given ID and username exists
-      const existingTeacher = await prisma.teacher.findFirst({
-        where: { T_id: parseInt(T_id)},
-      });
-  
-      if (!existingTeacher) {
-        return res.status(404).json({ error: `Teacher with ID ${T_id} not found` });
-      }
-  
-      // Delete the student
-      await prisma.teacher.delete({
-        where: { T_id: parseInt(T_id)},
-        
-      });
-  
-      return res.status(200).json({ message: `Teacher with ID ${T_id} has been deleted successfully` });
-    } catch (error) {
-      console.error('Error deleting student:', error);
-      res.status(500).json({ error: 'Unable to delete teacher', details: error.message });
+// Read a Single Admin
+exports.getAdminById = async (req, res) => {
+  try {
+    const { admin_id } = req.params;
+    const admin = await prisma.admin.findUnique({
+      where: { admin_id: Number(admin_id) },
+    });
+    if (admin) {
+      res.status(200).json(admin);
+    } else {
+      res.status(404).json({ message: 'Admin not found' });
     }
-}
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Update an Admin
+exports.updateAdmin = async (req, res) => {
+  try {
+    const { admin_id } = req.params;
+    const { username, firstname, lastname, role, phone, email } = req.body;
+    const admin = await prisma.admin.update({
+      where: { admin_id: Number(admin_id) },
+      data: {
+        username,
+        firstname,
+        lastname,
+        role,
+        phone,
+        email,
+      },
+    });
+    res.status(200).json(admin);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Delete an Admin
+exports.deleteAdmin = async (req, res) => {
+  try {
+    const { admin_id } = req.params;
+    const admin = await prisma.admin.delete({
+      where: { admin_id: Number(admin_id) },
+    });
+    res.status(200).json(admin);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

@@ -1,29 +1,12 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const { 
-    createStudent,
-    getAllStudents,
-    getStudentById,
-    getStudentByRoom,
-    updateStudent,
-    deleteStudent,
-} = require ("../controllers/advisorController");
+const studentController = require('../controllers/studentController'); // Assuming the controller file is named studentController.js
 
-
-const checkRole = require("../middlewares/checkRole");
-//, checkRole(['COURSE_INSTRUCTOR']) เช็คโรล เก็บไว้ใช้ตอนทำ login advice เสร้จsdf
-
-
-router.post("/createStudent",createStudent);
-router.get("/getAllStudents", getAllStudents);
-router.get("/getStudentById/:S_id", getStudentById);
-router.get("/getStudentByRoom/:room", getStudentByRoom);
-router.put("/updateStudent/:S_id", updateStudent);
-router.delete("/deleteStudent/:S_id", deleteStudent);
-
-//dont fis
-
-
-
+// Define routes and bind them to the controller functions
+router.post('/createStudent', studentController.createStudent);
+router.get('/getStudentById/:id', studentController.getStudentById);
+router.put('/updateStudent/:id', studentController.updateStudent);
+router.delete('/deleteStudent/:id', studentController.deleteStudent);
+router.get('/getAllStudent', studentController.getAllStudent);
 
 module.exports = router;
