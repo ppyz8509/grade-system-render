@@ -4,14 +4,13 @@ const prisma = new PrismaClient();
 // Create a Teacher
 exports.createTeacher = async (req, res) => {
   try {
-    const { username, password, firstname, lastname, role, phone, email } = req.body;
+    const { username, password, firstname, lastname, phone, email } = req.body;
     const teacher = await prisma.teacher.create({
       data: {
         username,
         password,
         firstname,
         lastname,
-        role,
         phone,
         email,
       },
@@ -53,7 +52,7 @@ exports.getTeacherById = async (req, res) => {
 exports.updateTeacher = async (req, res) => {
   try {
     const { teacher_id } = req.params;
-    const { username, password, firstname, lastname, role, phone, email } = req.body;
+    const { username, password, firstname, lastname, phone, email } = req.body;
     const teacher = await prisma.teacher.update({
       where: { teacher_id: Number(teacher_id) },
       data: {
@@ -61,7 +60,6 @@ exports.updateTeacher = async (req, res) => {
         password,
         firstname,
         lastname,
-        role,
         phone,
         email,
       },

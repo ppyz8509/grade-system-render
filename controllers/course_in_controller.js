@@ -79,14 +79,13 @@ exports.deleteSection = async (req, res) => {
 // Create a Course Instructor
 exports.createCourseIn = async (req, res) => {
   try {
-    const { username, password, firstname, lastname, role, phone, email } = req.body;
+    const { username, password, firstname, lastname, phone, email } = req.body;
     const courseIn = await prisma.course_in.create({
       data: {
         username,
         password,
         firstname,
         lastname,
-        role,
         phone,
         email,
       },
@@ -128,7 +127,7 @@ exports.getCourseInById = async (req, res) => {
 exports.updateCourseIn = async (req, res) => {
   try {
     const { courseinstructor_id } = req.params;
-    const { username, password, firstname, lastname, role, phone, email } = req.body;
+    const { username, password, firstname, lastname, phone, email } = req.body;
     const courseIn = await prisma.course_in.update({
       where: { courseinstructor_id: Number(courseinstructor_id) },
       data: {
@@ -136,7 +135,6 @@ exports.updateCourseIn = async (req, res) => {
         password,
         firstname,
         lastname,
-        role,
         phone,
         email,
       },
