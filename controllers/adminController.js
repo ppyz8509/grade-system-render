@@ -4,14 +4,13 @@ const prisma = new PrismaClient();
 // Create an Admin
 exports.createAdmin = async (req, res) => {
   try {
-    const { username,password, firstname, lastname, role, phone, email } = req.body;
+    const { username, password, firstname, lastname, phone, email } = req.body;
     const admin = await prisma.admin.create({
       data: {
         username,
         password,
         firstname,
         lastname,
-        role,
         phone,
         email,
       },
@@ -22,7 +21,7 @@ exports.createAdmin = async (req, res) => {
   }
 };
 
-// Read All Admins
+// Read all Admins
 exports.getAdmins = async (req, res) => {
   try {
     const admins = await prisma.admin.findMany();
@@ -53,14 +52,14 @@ exports.getAdminById = async (req, res) => {
 exports.updateAdmin = async (req, res) => {
   try {
     const { admin_id } = req.params;
-    const { username, firstname, lastname, role, phone, email } = req.body;
+    const { username, password, firstname, lastname, phone, email } = req.body;
     const admin = await prisma.admin.update({
       where: { admin_id: Number(admin_id) },
       data: {
         username,
+        password,
         firstname,
         lastname,
-        role,
         phone,
         email,
       },
