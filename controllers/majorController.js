@@ -463,32 +463,78 @@ exports.getCoursesByCategoryId = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching courses by category ID' });
   }
 };
-
-// Get categories and group majors by major_id
-exports.getCategoryAndGroupMajorByMajorId = async (req, res) => {
+//getCategoriesByMajorCode
+exports.getCategoriesByMajorCode = async (req, res) => {
   try {
-    const { major_id } = req.params;
+    const { major_code } = req.params;
 
-    // ตรวจสอบว่ามี major_id หรือไม่
-    if (!major_id) {
-      return res.status(400).json({ error: 'Major ID is required' });
+    // ตรวจสอบว่ามี major_code หรือไม่
+    if (!major_code) {
+      return res.status(400).json({ error: 'Major Code is required' });
+    }
+
+    // ค้นหา major_id โดยใช้ major_code
+    const major = await prisma.major.findUnique({
+      where: { major_code: major_code }
+    });
+
+    if (!major) {
+      return res.status(404).json({ error: 'Major not found' });
     }
 
     // ค้นหาหมวดหมู่ทั้งหมดที่ตรงกับ major_id
     const categories = await prisma.category.findMany({
-      where: { major_id: parseInt(major_id) }
+      where: { major_id: major.major_id }
     });
 
-    // ค้นหากลุ่มหลักทั้งหมดที่ตรงกับ category_id ของหมวดหมู่ที่ค้นพบ
-    const groupMajors = await prisma.group_major.findMany({
-      where: { category_id: { in: categories.map(c => c.category_id) } }
-    });
-
-    // ส่งข้อมูลหมวดหมู่และกลุ่มหลักที่ค้นพบ
-    res.status(200).json({ categories, groupMajors });
+    // ส่งข้อมูลหมวดหมู่ที่ค้นพบ
+    res.status(200).json(categories);
   } catch (error) {
-    console.error('Error fetching categories and group majors by major ID:', error);
-    res.status(500).json({ error: 'An error occurred while fetching categories and group majors by major ID' });
+    console.error('Error fetching categories by major code:', error);
+    res.status(500).json({ error: 'An error occurred while fetching categories by major code' });
   }
 };
+//getGroupsByCategoryId
+exports.getGroupsByCategoryId = async (req, res) => {
+  try {
+    const { category_id } = req.params;
 
+    // ตรวจสอบว่ามี category_id หรือไม่
+    if (!category_id) {
+      return res.status(400).json({ error: 'Category ID is required' });
+    }
+
+    // ค้นหากลุ่มหลักทั้งหมดที่ตรงกับ category_id
+    const groups = await prisma.group_major.findMany({
+      where: { category_id: parseInt(category_id) }
+    });
+
+    // ส่งข้อมูลกลุ่มหลักที่ค้นพบ
+    res.status(200).json(groups);
+  } catch (error) {
+    console.error('Error fetching groups by category ID:', error);
+    res.status(500).json({ error: 'An error occurred while fetching groups by category ID' });
+  }
+}
+//getCoursesByGroupId
+exports.getCoursesByGroupId = async (req, res) => {
+  try {
+    const { group_id } = req.params;
+
+    // ตรวจสอบว่ามี group_id หรือไม่
+    if (!group_id) {
+      return res.status(400).json({ error: 'Group ID is required' });
+    }
+
+    // ค้นหาคอร์สทั้งหมดที่ตรงกับ group_id
+    const courses = await prisma.course.findMany({
+      where: { group_id: parseInt(group_id) }
+    });
+
+    // ส่งข้อมูลคอร์สที่ค้นพบ
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error('Error fetching courses by group ID:', error);
+    res.status(500).json({ error: 'An error occurred while fetching courses by group ID' });
+  }
+};

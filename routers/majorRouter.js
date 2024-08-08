@@ -31,6 +31,8 @@ router.get("/getCourseById/:id", majorController.getCourseById);
 router.put("/updateCourse/:id", majorController.updateCourse);
 router.delete("/deleteCourse/:id", majorController.deleteCourse);
 
-router.get('/MajorId/:major_id', majorController.getCategoryAndGroupMajorByMajorId);
+router.get('/getCategoriesByMajorCode/:major_code', majorController.getCategoriesByMajorCode);
+router.get('/getGroupsByCategoryId/:category_id', majorController.getGroupsByCategoryId);
+router.get('/getCoursesByGroupId/:group_id', majorController.getCoursesByGroupId);
 router.get('/getCoursesByCategoryId/:category_id', majorController.getCoursesByCategoryId);
 module.exports = router;
