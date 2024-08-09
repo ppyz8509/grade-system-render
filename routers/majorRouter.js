@@ -8,7 +8,7 @@ router.post("/createMajor", majorController.createMajor);
 router.get("/getMajorByCode/:major_code", majorController.getMajorByCode);
 router.get("/getAllMajors/", majorController.getAllMajors);
 router.put("/updateMajor/:id", majorController.updateMajor);
-router.delete("/deleteMajor/:major_code", majorController.deleteMajor);
+router.delete("/deleteMajor/:id", majorController.deleteMajor);
 
 //category
 router.post("/createCategory", majorController.createCategory);

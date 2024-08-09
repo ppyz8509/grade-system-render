@@ -20,6 +20,7 @@ exports.createMajor = async (req, res) => {
       return res.status(400).json({ error: 'Major with this code already exists' });
     }
 
+    // Create new major without specifying major_id
     const newMajor = await prisma.major.create({
       data: {
         major_code,
@@ -96,40 +97,28 @@ exports.updateMajor = async (req, res) => {
 
 exports.deleteMajor = async (req, res) => {
   try {
-    const { major_code } = req.params;
+    const { id } = req.params;
 
-    // Check if the major exists
+    // ตรวจสอบ id เป็นตัวเลข
+    if (isNaN(parseInt(id, 10))) {
+      return res.status(400).json({ error: 'Invalid major_id format' });
+    }
+
+    // ค้นหา major_id ก่อนลบ
     const major = await prisma.major.findUnique({
-      where: { major_code: major_code }
+      where: { major_id: parseInt(id, 10) }
     });
 
     if (!major) {
       return res.status(404).json({ error: 'Major not found' });
     }
 
-    // Delete related Categories (if any)
-    await prisma.category.deleteMany({
-      where: { major_code: major_code } // Adjust based on your schema
+    // ลบ major โดยใช้ major_id
+    const deletedMajor = await prisma.major.delete({
+      where: { major_id: parseInt(id, 10) }
     });
 
-    // Delete related MajorCourses (if any)
-    await prisma.majorCourse.deleteMany({
-      where: { major_code: major_code } // Adjust based on your schema
-    });
-
-    // Optionally: Update other related records if necessary
-    // For example, if you need to update courses to set major_code to null
-    await prisma.course.updateMany({
-      where: { major_code: major_code }, // Adjust based on your schema
-      data: { major_code: null } // Update to null or any other default value
-    });
-
-    // Delete the Major
-    await prisma.major.delete({
-      where: { major_code: major_code }
-    });
-
-    res.status(204).send();
+    res.status(200).json({ message: 'Major deleted successfully', deletedMajor });
   } catch (error) {
     console.error('Error deleting major:', error);
     res.status(500).json({ error: 'An error occurred while deleting the major' });
@@ -141,10 +130,11 @@ exports.deleteMajor = async (req, res) => {
 //Category
 exports.createCategory = async (req, res) => {
   try {
-    const { category_name, category_unit, major_id } = req.body;
+    const { category_id,category_name, category_unit, major_id } = req.body;
 
     const newCategory = await prisma.category.create({
       data: {
+        category_id,
         category_name,
         category_unit,
         major_id,
@@ -153,11 +143,14 @@ exports.createCategory = async (req, res) => {
 
     res.status(201).json(newCategory);
   } catch (error) {
-    console.error('Error creating category:', error);
-    res.status(500).json({ error: 'An error occurred while creating the category' });
+    if (error.code === 'P2002') {
+      res.status(400).json({ error: 'Category ID already exists' });
+    } else {
+      console.error('Error creating category:', error);
+      res.status(500).json({ error: 'An error occurred while creating the category' });
+    }
   }
 };
-
 exports.getAllCategories = async (req, res) => {
   try {
     const categories = await prisma.category.findMany();
@@ -250,10 +243,11 @@ exports.deleteCategory = async (req, res) => {
 // Group Major
 exports.createGroupMajor = async (req, res) => {
   try {
-    const { group_name, group_unit, category_id } = req.body;
+    const { group_id,group_name, group_unit, category_id } = req.body;
 
     const newGroupMajor = await prisma.group_major.create({
       data: {
+        group_id,
         group_name,
         group_unit,
         category_id,
