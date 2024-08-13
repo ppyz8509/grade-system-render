@@ -59,9 +59,9 @@ model course {
   courseNameTH     String         @db.VarChar(255)
   courseNameENG    String         @db.VarChar(255)
   courseUnit       Int
-  courseTheory     Int
-  coursePractice   Int
-  categoryResearch Int
+  courseTheory     Int?
+  coursePractice   Int?
+  categoryResearch Int?
   category_id      Int?
   group_id         Int?
   category         category?      @relation(fields: [category_id], references: [category_id], onDelete: Restrict, onUpdate: Restrict, map: "course_ibfk_2")
