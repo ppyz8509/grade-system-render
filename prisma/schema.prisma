@@ -7,8 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-
 enum Grade {
   A
   B
@@ -21,153 +19,156 @@ enum Grade {
   F
 }
 
+enum FreeSubject {
+  true
+  false
+}
+
 model admin {
-  admin_id              Int     @id @default(autoincrement())
-  username              String  @unique(map: "admin_username") @db.VarChar(255)
-  password              String  @db.VarChar(255)
-  firstname             String  @db.VarChar(255)
-  lastname              String  @db.VarChar(255)
-  phone                 String? 
-  email                 String? @db.VarChar(255)
+  admin_id  Int     @id @default(autoincrement())
+  username  String  @unique @db.VarChar(255)
+  firstname String  @db.VarChar(255)
+  lastname  String  @db.VarChar(255)
+  phone     String? @db.VarChar(10)
+  email     String? @db.VarChar(255)
 }
 
 model advisor {
   advisor_id Int     @id @default(autoincrement())
-  teacher_id Int
+  username   String  @unique @db.VarChar(255)
+  password   String  @db.VarChar(255)
+  firstname  String  @db.VarChar(255)
+  lastname   String  @db.VarChar(255)
   sec_id     Int
-  teacher    teacher @relation(fields: [teacher_id], references: [teacher_id], onUpdate: Restrict, map: "advisor_ibfk_1")
-  section    section @relation(fields: [sec_id], references: [sec_id], onUpdate: Restrict, map: "advisor_ibfk_2")
+  phone      String? @db.VarChar(50)
+  email      String? @db.VarChar(255)
+  section    section @relation(fields: [sec_id], references: [sec_id])
 
-  @@index([sec_id], map: "advisor_sec_id_idx")
-  @@index([teacher_id], map: "advisor_teacher_id_idx")
+
 }
 
 model category {
-  category_id   Int           @id @default(autoincrement())
+  category_id   Int           @id
   category_name String        @db.VarChar(255)
   category_unit Int
-  major_id      Int
-  major         major         @relation(fields: [major_id], references: [major_id], onUpdate: Restrict, map: "category_ibfk_1")
+  major_id      Int           
+  major         major         @relation(fields: [major_id], references: [major_id])
   course        course[]
   group_major   group_major[]
-
-  @@index([major_id], map: "category_major_id_idx")
 }
 
 model course {
-  course_id        Int            @id @default(autoincrement())
+  course_id        String         @id
   courseNameTH     String         @db.VarChar(255)
   courseNameENG    String         @db.VarChar(255)
   courseUnit       Int
   courseTheory     Int?
   coursePractice   Int?
   categoryResearch Int?
-  category_id      Int?
-  group_id         Int?
-  category         category?      @relation(fields: [category_id], references: [category_id], onDelete: Restrict, onUpdate: Restrict, map: "course_ibfk_2")
-  group_major      group_major?   @relation(fields: [group_id], references: [group_id], onDelete: Restrict, onUpdate: Restrict, map: "course_ibfk_3")
+  category_id      Int
+  group_id         Int
+  freesubject      FreeSubject    @default(false)
+  category         category?      @relation(fields: [category_id], references: [category_id])
+  group_major      group_major?   @relation(fields: [group_id], references: [group_id])
   major_course     major_course[]
-  register         register[]
+  studentplan      studentplan[]
 
-  @@index([category_id], map: "course_category_id_idx")
-  @@index([group_id], map: "course_group_id_idx")
+
 }
 
 model course_in {
-  courseinstructor_id       Int     @id @default(autoincrement())
-  username                  String  @unique(map: "course_in_username") @db.VarChar(255)
-  password                  String  @db.VarChar(255)
-  firstname                 String  @db.VarChar(255)
-  lastname                  String  @db.VarChar(255)
-  phone                     String?
-  email                     String? @db.VarChar(255)
+  courseinstructor_id Int     @id @default(autoincrement())
+  username            String  @unique @db.VarChar(255)
+  password            String  @db.VarChar(255)
+  firstname           String  @db.VarChar(255)
+  lastname            String  @db.VarChar(255)
+  phone               String? @db.VarChar(10)
+  email               String? @db.VarChar(255)
 }
 
 model group_major {
-  group_id    Int      @id @default(autoincrement())
+  group_id    Int      @id
   group_name  String   @db.VarChar(255)
   group_unit  Int
   category_id Int
   course      course[]
-  category    category @relation(fields: [category_id], references: [category_id], onUpdate: Restrict, map: "group_major_ibfk_1")
-
-  @@index([category_id], map: "group_major_category_id_idx")
+  category    category @relation(fields: [category_id], references: [category_id])
 }
 
+enum  Status {
+  ACTIVE
+  INACTIVE
+}
 model major {
   major_id     Int            @id @default(autoincrement())
-  major_code   String         @unique @db.VarChar(255)
+  major_code   String         @db.VarChar(255)
   majorNameTH  String         @db.VarChar(255)
   majorNameENG String         @db.VarChar(255)
-  majorYear    Int
-  majorUnit    Int
-  status       String?        @db.VarChar(255)
+  majorYear    String         @db.VarChar(50)
+  majorUnit    String         @db.VarChar(50)
+  status       Status         @default(ACTIVE)
   category     category[]
   major_course major_course[]
-  section      section[]
 }
 
 model major_course {
   mc_id     Int    @id @default(autoincrement())
-  major_id  Int
-  course_id Int
-  major     major  @relation(fields: [major_id], references: [major_id], onUpdate: Restrict, map: "major_course_ibfk_1")
-  course    course @relation(fields: [course_id], references: [course_id], onUpdate: Restrict, map: "major_course_ibfk_2")
+  major_id  Int  
+  course_id String
+  course    course @relation(fields: [course_id], references: [course_id])
+  major     major  @relation(fields: [major_id], references: [major_id])
 
-  @@index([course_id], map: "major_course_course_id_idx")
-  @@index([major_id], map: "major_course_major_id_idx")
 }
 
 model register {
-  register_id Int     @id @default(autoincrement())
-  semester    Int
-  year        Int
-  grade       Grade?
-  teacher_id  Int
-  course_id   Int
-  student_id  Int
-  teacher     teacher @relation(fields: [teacher_id], references: [teacher_id], onUpdate: Restrict, map: "register_ibfk_1")
-  student     student @relation(fields: [student_id], references: [student_id], onUpdate: Restrict, map: "register_ibfk_2")
-  course      course  @relation(fields: [course_id], references: [course_id], onUpdate: Restrict, map: "register_ibfk_3")
+  register_id    Int         @id @default(autoincrement())
+  student_id     String
+  grade          Grade 
+  teacher_name   String      @db.VarChar(255)
+  studentplan_id Int
+  student        student     @relation(fields: [student_id], references: [student_id])
+  studentplan    studentplan @relation(fields: [studentplan_id], references: [studentplan_id])
 
-  @@index([course_id], map: "register_course_id_idx")
-  @@index([student_id], map: "register_student_id_idx")
-  @@index([teacher_id], map: "register_teacher_id_idx")
+
 }
 
 model section {
-  sec_id   Int       @id @default(autoincrement())
-  sec_name String    @db.VarChar(255)
-  advisor  advisor[]
-  student  student[]
-  major_id Int
-  major    major      @relation(fields: [major_id], references: [major_id], onUpdate: Restrict, map: "major_ibfk_1")
+  sec_id      Int           @id @default(autoincrement())
+  sec_name    String        @db.VarChar(255)
+  major_id    String        @db.VarChar(50)
+  advisor     advisor[]
+  student     student[]
+  studentplan studentplan[]
 }
 
 model student {
-  student_id              Int        @id 
-  username                String     @unique(map: "student_username") @db.VarChar(255)
-  password                String     @db.VarChar(255)
-  firstname               String     @db.VarChar(255)
-  lastname                String     @db.VarChar(255)      
-  phone                   String? 
-  email                   String?    @db.VarChar(255)
-  sec_id                  Int
-  register                register[]
-  section                 section    @relation(fields: [sec_id], references: [sec_id], onUpdate: Restrict, map: "student_ibfk_3")
+  student_id String        @id
+  username   String     @unique @db.VarChar(255)
+  password   String     @db.VarChar(255)
+  firstname  String     @db.VarChar(255)
+  lastname   String     @db.VarChar(255)
+  phone      String?    @db.VarChar(10)
+  email      String?    @db.VarChar(255)
+  sec_id     Int
+  register   register[]
+  section    section    @relation(fields: [sec_id], references: [sec_id])
 
-  @@index([sec_id], map: "student_sec_id_idx")
+}
+
+model studentplan {
+  studentplan_id Int        @id @default(autoincrement())
+  sec_id         Int
+  year           String     @db.VarChar(50)
+  semester       Int
+  course_id      String
+  register       register[]
+  section        section    @relation(fields: [sec_id], references: [sec_id])
+  course         course     @relation(fields: [course_id], references: [course_id])
+
 }
 
 model teacher {
-  teacher_id              Int        @id @default(autoincrement())
-  username                String     @unique(map: "teacher_username") @db.VarChar(255)
-  password                String     @db.VarChar(255)
-  firstname               String     @db.VarChar(255)
-  lastname                String     @db.VarChar(255)
-  phone                   String? 
-  email                   String?    @db.VarChar(255)
-  advisor                 advisor[]
-  register                register[]
-
+  teacher_id Int    @id @default(autoincrement())
+  firstname  String @db.VarChar(255)
+  lastname   String @db.VarChar(255)
 }

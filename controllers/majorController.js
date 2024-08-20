@@ -12,7 +12,7 @@ exports.createMajor = async (req, res) => {
     }
 
     // Check if the major_code already exists
-    const existingMajor = await prisma.major.findUnique({
+    const existingMajor = await prisma.major.findFirst({
       where: { major_code: major_code }
     });
 
@@ -99,12 +99,12 @@ exports.deleteMajor = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // ตรวจสอบ id เป็นตัวเลข
+    // Validate ID
     if (isNaN(parseInt(id, 10))) {
       return res.status(400).json({ error: 'Invalid major_id format' });
     }
 
-    // ค้นหา major_id ก่อนลบ
+    // Find the major record
     const major = await prisma.major.findUnique({
       where: { major_id: parseInt(id, 10) }
     });
@@ -113,7 +113,18 @@ exports.deleteMajor = async (req, res) => {
       return res.status(404).json({ error: 'Major not found' });
     }
 
-    // ลบ major โดยใช้ major_id
+    // Disassociate related records in category
+    await prisma.category.updateMany({
+      where: { major_id: parseInt(id, 10) },
+      data: { major_id: null }  // Set foreign key to null
+    });
+
+    // Delete related records in major_course
+    await prisma.major_course.deleteMany({
+      where: { major_id: parseInt(id, 10) }
+    });
+
+    // Delete the major record
     const deletedMajor = await prisma.major.delete({
       where: { major_id: parseInt(id, 10) }
     });
@@ -127,10 +138,22 @@ exports.deleteMajor = async (req, res) => {
 
 
 
+
+
+
 //Category
 exports.createCategory = async (req, res) => {
   try {
-    const { category_id,category_name, category_unit, major_id } = req.body;
+    const { category_id, category_name, category_unit, major_id } = req.body;
+
+    // Check if major_id exists
+    const majorExists = await prisma.major.findUnique({
+      where: { major_id },
+    });
+
+    if (!majorExists) {
+      return res.status(400).json({ error: 'Invalid major_id: No matching major found' });
+    }
 
     const newCategory = await prisma.category.create({
       data: {
@@ -160,7 +183,6 @@ exports.getAllCategories = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching categories' });
   }
 };
-
 exports.getCategoryById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -179,7 +201,6 @@ exports.getCategoryById = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching the category' });
   }
 };
-
 exports.updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
@@ -200,7 +221,6 @@ exports.updateCategory = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while updating the category' });
   }
 };
-
 exports.deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
@@ -260,7 +280,6 @@ exports.createGroupMajor = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while creating the group major' });
   }
 };
-
 exports.getAllGroupMajors = async (req, res) => {
   try {
     const groupMajors = await prisma.group_major.findMany();
@@ -270,7 +289,6 @@ exports.getAllGroupMajors = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching group majors' });
   }
 };
-
 exports.getGroupMajorById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -289,7 +307,6 @@ exports.getGroupMajorById = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching the group major' });
   }
 };
-
 exports.updateGroupMajor = async (req, res) => {
   try {
     const { id } = req.params;
@@ -310,7 +327,6 @@ exports.updateGroupMajor = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while updating the group major' });
   }
 };
-
 exports.deleteGroupMajor = async (req, res) => {
   try {
     const { id } = req.params;
@@ -363,7 +379,6 @@ exports.createCourse = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while creating the course' });
   }
 };
-
 exports.getAllCourses = async (req, res) => {
   try {
     const courses = await prisma.course.findMany();
@@ -457,7 +472,8 @@ exports.getCoursesByCategoryId = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching courses by category ID' });
   }
 };
-//getCategoriesByMajorCode
+
+// Get categories by major_code
 exports.getCategoriesByMajorCode = async (req, res) => {
   try {
     const { major_code } = req.params;
@@ -467,8 +483,8 @@ exports.getCategoriesByMajorCode = async (req, res) => {
       return res.status(400).json({ error: 'Major Code is required' });
     }
 
-    // ค้นหา major_id โดยใช้ major_code
-    const major = await prisma.major.findUnique({
+    // ค้นหา major โดยใช้ major_code
+    const major = await prisma.major.findFirst({
       where: { major_code: major_code }
     });
 
@@ -488,7 +504,9 @@ exports.getCategoriesByMajorCode = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching categories by major code' });
   }
 };
-//getGroupsByCategoryId
+
+
+// Get groups by category_id
 exports.getGroupsByCategoryId = async (req, res) => {
   try {
     const { category_id } = req.params;
@@ -509,8 +527,9 @@ exports.getGroupsByCategoryId = async (req, res) => {
     console.error('Error fetching groups by category ID:', error);
     res.status(500).json({ error: 'An error occurred while fetching groups by category ID' });
   }
-}
-//getCoursesByGroupId
+};
+
+// Get courses by group_id
 exports.getCoursesByGroupId = async (req, res) => {
   try {
     const { group_id } = req.params;
@@ -532,3 +551,4 @@ exports.getCoursesByGroupId = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching courses by group ID' });
   }
 };
+
