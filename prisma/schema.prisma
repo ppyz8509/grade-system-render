@@ -43,12 +43,10 @@ model advisor {
   phone      String? @db.VarChar(50)
   email      String? @db.VarChar(255)
   section    section @relation(fields: [sec_id], references: [sec_id])
-
-
 }
 
 model category {
-  category_id   Int           @id
+  category_id   Int           @id @default(autoincrement())
   category_name String        @db.VarChar(255)
   category_unit Int
   major_id      Int           
@@ -72,9 +70,9 @@ model course {
   group_major      group_major?   @relation(fields: [group_id], references: [group_id])
   major_course     major_course[]
   studentplan      studentplan[]
-
-
 }
+
+
 
 model course_in {
   courseinstructor_id Int     @id @default(autoincrement())
@@ -87,7 +85,7 @@ model course_in {
 }
 
 model group_major {
-  group_id    Int      @id
+  group_id    Int      @id @default(autoincrement())
   group_name  String   @db.VarChar(255)
   group_unit  Int
   category_id Int
@@ -164,7 +162,6 @@ model studentplan {
   register       register[]
   section        section    @relation(fields: [sec_id], references: [sec_id])
   course         course     @relation(fields: [course_id], references: [course_id])
-
 }
 
 model teacher {

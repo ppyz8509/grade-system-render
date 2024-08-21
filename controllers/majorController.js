@@ -96,57 +96,66 @@ exports.updateMajor = async (req, res) => {
 };
 
 exports.deleteMajor = async (req, res) => {
-  try {
-    const { id } = req.params;
+  const { major_id } = req.params;
 
-    // Validate ID
-    if (isNaN(parseInt(id, 10))) {
-      return res.status(400).json({ error: 'Invalid major_id format' });
+  try {
+    // Check for major_id
+    if (!major_id) {
+      return res.status(400).json({ error: 'Missing major_id' });
     }
 
-    // Find the major record
+    // Check if the Major exists
     const major = await prisma.major.findUnique({
-      where: { major_id: parseInt(id, 10) }
+      where: { major_id: parseInt(major_id, 10) },
     });
 
     if (!major) {
       return res.status(404).json({ error: 'Major not found' });
     }
 
-    // Disassociate related records in category
-    await prisma.category.updateMany({
-      where: { major_id: parseInt(id, 10) },
-      data: { major_id: null }  // Set foreign key to null
-    });
-
     // Delete related records in major_course
     await prisma.major_course.deleteMany({
-      where: { major_id: parseInt(id, 10) }
+      where: { major_id: parseInt(major_id, 10) },
     });
 
-    // Delete the major record
-    const deletedMajor = await prisma.major.delete({
-      where: { major_id: parseInt(id, 10) }
+    // Delete related records in group_major
+    const categories = await prisma.category.findMany({
+      where: { major_id: parseInt(major_id, 10) },
+      select: { category_id: true }
+    });
+    const categoryIds = categories.map(c => c.category_id);
+
+    await prisma.group_major.deleteMany({
+      where: { category_id: { in: categoryIds } },
     });
 
-    res.status(200).json({ message: 'Major deleted successfully', deletedMajor });
+    // Delete related records in category
+    await prisma.category.deleteMany({
+      where: { major_id: parseInt(major_id, 10) },
+    });
+
+    // Delete Major
+    await prisma.major.delete({
+      where: { major_id: parseInt(major_id, 10) },
+    });
+
+    // Respond with success message
+    res.json({ message: 'Major successfully deleted' });
   } catch (error) {
-    console.error('Error deleting major:', error);
-    res.status(500).json({ error: 'An error occurred while deleting the major' });
+    console.error('Error deleting Major:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
 
 
 
-
-
-//Category
+// Category
 exports.createCategory = async (req, res) => {
   try {
-    const { category_id, category_name, category_unit, major_id } = req.body;
+    const { category_name, category_unit, major_id } = req.body;
 
-    // Check if major_id exists
+    // ตรวจสอบว่า major_id มีอยู่หรือไม่
     const majorExists = await prisma.major.findUnique({
       where: { major_id },
     });
@@ -155,9 +164,9 @@ exports.createCategory = async (req, res) => {
       return res.status(400).json({ error: 'Invalid major_id: No matching major found' });
     }
 
+
     const newCategory = await prisma.category.create({
       data: {
-        category_id,
         category_name,
         category_unit,
         major_id,
@@ -167,7 +176,7 @@ exports.createCategory = async (req, res) => {
     res.status(201).json(newCategory);
   } catch (error) {
     if (error.code === 'P2002') {
-      res.status(400).json({ error: 'Category ID already exists' });
+      res.status(400).json({ error: 'Category with this ID already exists' });
     } else {
       console.error('Error creating category:', error);
       res.status(500).json({ error: 'An error occurred while creating the category' });
@@ -226,7 +235,7 @@ exports.deleteCategory = async (req, res) => {
     const { id } = req.params;
     const categoryId = parseInt(id);
 
-    // Check if the category exists
+    // Check if the Category exists
     const category = await prisma.category.findUnique({
       where: { category_id: categoryId }
     });
@@ -235,39 +244,48 @@ exports.deleteCategory = async (req, res) => {
       return res.status(404).json({ error: 'Category not found' });
     }
 
-    // Delete GroupMajor linked to the Category
+    // Delete GroupMajor associated with the Category
     await prisma.group_major.deleteMany({
       where: { category_id: categoryId }
     });
 
-    // Update courses to set category_id to null (if any)
-    await prisma.course.updateMany({
-      where: { category_id: categoryId },
-      data: { category_id: null }
+    // Delete Courses associated with the Category
+    await prisma.course.deleteMany({
+      where: { category_id: categoryId }
     });
 
-    // Delete Category
+    // Delete the Category
     await prisma.category.delete({
       where: { category_id: categoryId }
     });
 
-    res.status(204).send();
+    res.json({ message: 'Category successfully deleted' });
   } catch (error) {
-    console.error('Error deleting category:', error);
-    res.status(500).json({ error: 'An error occurred while deleting the category' });
+    console.error('Error deleting Category:', error);
+    res.status(500).json({ error: 'An error occurred while deleting the Category' });
   }
 };
+
+
+
 
 
 
 // Group Major
 exports.createGroupMajor = async (req, res) => {
   try {
-    const { group_id,group_name, group_unit, category_id } = req.body;
+    const { group_name, group_unit, category_id } = req.body;
+
+    const groupMajorExists = await prisma.category.findUnique({
+      where: { category_id },
+    });
+    
+    if(!groupMajorExists){
+      return res.status(400).json({ error: 'Invalid category_id: No matching major found' });
+    }
 
     const newGroupMajor = await prisma.group_major.create({
       data: {
-        group_id,
         group_name,
         group_unit,
         category_id,
@@ -276,9 +294,13 @@ exports.createGroupMajor = async (req, res) => {
 
     res.status(201).json(newGroupMajor);
   } catch (error) {
-    console.error('Error creating group major:', error);
-    res.status(500).json({ error: 'An error occurred while creating the group major' });
+    if (error.code === 'P2002') {
+      res.status(400).json({ error: 'Group Major with this ID already exists' });
+    } else {
+      console.error('Error creating group major:', error);
+      res.status(500).json({ error: 'An error occurred while creating the group major' });
   }
+};
 };
 exports.getAllGroupMajors = async (req, res) => {
   try {
@@ -330,26 +352,37 @@ exports.updateGroupMajor = async (req, res) => {
 exports.deleteGroupMajor = async (req, res) => {
   try {
     const { id } = req.params;
+    const groupId = parseInt(id);
 
-    // Update courses to set group_id to null
-    await prisma.course.updateMany({
-      where: { group_id: parseInt(id) },
-      data: {
-        group_id: null
-      }
+    // Check if the GroupMajor exists
+    const groupMajor = await prisma.group_major.findUnique({
+      where: { group_id: groupId }
     });
 
-    // Delete the group major
+    if (!groupMajor) {
+      return res.status(404).json({ error: 'GroupMajor not found' });
+    }
+
+    // Delete Courses associated with the GroupMajor
+    await prisma.course.deleteMany({
+      where: { group_id: groupId }
+    });
+
+    // Delete the GroupMajor
     await prisma.group_major.delete({
-      where: { group_id: parseInt(id) }
+      where: { group_id: groupId }
     });
 
-    res.status(204).send();
+    res.json({ message: 'GroupMajor successfully deleted' });
   } catch (error) {
-    console.error('Error deleting group major:', error);
-    res.status(500).json({ error: 'An error occurred while deleting the group major' });
+    console.error('Error deleting GroupMajor:', error);
+    res.status(500).json({ error: 'An error occurred while deleting the GroupMajor' });
   }
 };
+
+
+
+
 
 
 
@@ -388,13 +421,12 @@ exports.getAllCourses = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching courses' });
   }
 };
-
 exports.getCourseById = async (req, res) => {
   try {
     const { id } = req.params;
 
     const course = await prisma.course.findUnique({
-      where: { course_id: parseInt(id) },
+      where: { course_id: id }, // เนื่องจาก course_id เป็น String, ไม่ต้อง parseInt
     });
 
     if (course) {
@@ -407,14 +439,13 @@ exports.getCourseById = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching the course' });
   }
 };
-
 exports.updateCourse = async (req, res) => {
   try {
     const { id } = req.params;
     const { courseNameTH, courseNameENG, courseUnit, courseTheory, coursePractice, categoryResearch, category_id, group_id } = req.body;
 
     const updatedCourse = await prisma.course.update({
-      where: { course_id: parseInt(id) },
+      where: { course_id: id }, // เนื่องจาก course_id เป็น String, ไม่ต้อง parseInt
       data: {
         courseNameTH,
         courseNameENG,
@@ -422,8 +453,8 @@ exports.updateCourse = async (req, res) => {
         courseTheory,
         coursePractice,
         categoryResearch,
-        category_id: category_id || null,
-        group_id: group_id || null,
+        category_id: category_id || null, // รับค่า null หรือ Int
+        group_id: group_id || null, // รับค่า null หรือ Int
       },
     });
 
@@ -433,22 +464,20 @@ exports.updateCourse = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while updating the course' });
   }
 };
-
 exports.deleteCourse = async (req, res) => {
   try {
     const { id } = req.params;
 
     await prisma.course.delete({
-      where: { course_id: parseInt(id) },
+      where: { course_id: id }, // เนื่องจาก course_id เป็น String, ไม่ต้อง parseInt
     });
 
-    res.status(204).send();
+    res.json({ message: 'Course successfully deleted' });
   } catch (error) {
     console.error('Error deleting course:', error);
     res.status(500).json({ error: 'An error occurred while deleting the course' });
   }
 };
-
 
 // Get courses by category_id
 exports.getCoursesByCategoryId = async (req, res) => {
@@ -472,7 +501,6 @@ exports.getCoursesByCategoryId = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching courses by category ID' });
   }
 };
-
 // Get categories by major_code
 exports.getCategoriesByMajorCode = async (req, res) => {
   try {
@@ -504,8 +532,6 @@ exports.getCategoriesByMajorCode = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching categories by major code' });
   }
 };
-
-
 // Get groups by category_id
 exports.getGroupsByCategoryId = async (req, res) => {
   try {
@@ -528,7 +554,6 @@ exports.getGroupsByCategoryId = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching groups by category ID' });
   }
 };
-
 // Get courses by group_id
 exports.getCoursesByGroupId = async (req, res) => {
   try {
