@@ -6,13 +6,11 @@ const {
     getRegisterById,
     updateRegister,
     deleteRegister,
-    getCoursesByStudentId
 } = require ("../controllers/register");
 
-router.post("/createRegister",createRegister)
-router.get("/getRegisters",getRegisters);
+router.post("/createRegister/:student_id",createRegister)
+router.get("/getRegisters/:student_id",getRegisters);
 router.get("/getRegisterById/:register_id",getRegisterById);
-router.get("/getCoursesByStudentId/:student_id",getCoursesByStudentId);
 router.put("/updateRegister/:register_id",updateRegister);
 router.delete("/deleteRegister/:register_id",deleteRegister);
 

@@ -6,6 +6,7 @@ getSections,
 getSectionById,
 updateSection,
 deleteSection,
+
 createCourseIn,
 getCourseIns,
 getCourseInById,
