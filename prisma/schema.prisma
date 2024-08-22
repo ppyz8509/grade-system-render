@@ -74,8 +74,6 @@ model course {
   studentplan      studentplan[]
 }
 
-
-
 model course_in {
   courseinstructor_id Int     @id @default(autoincrement())
   username            String  @unique @db.VarChar(255)
@@ -99,6 +97,7 @@ enum  Status {
   ACTIVE
   INACTIVE
 }
+
 model major {
   major_id     Int            @id @default(autoincrement())
   major_code   String         @db.VarChar(255)
@@ -117,7 +116,6 @@ model major_course {
   course_id String
   course    course @relation(fields: [course_id], references: [course_id])
   major     major  @relation(fields: [major_id], references: [major_id])
-
 }
 
 model register {
@@ -128,8 +126,6 @@ model register {
   studentplan_id Int
   student        student     @relation(fields: [student_id], references: [student_id])
   studentplan    studentplan @relation(fields: [studentplan_id], references: [studentplan_id])
-
-
 }
 
 model section {
@@ -152,7 +148,6 @@ model student {
   sec_id     Int
   register   register[]
   section    section    @relation(fields: [sec_id], references: [sec_id])
-
 }
 
 model studentplan {
