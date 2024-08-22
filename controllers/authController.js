@@ -6,10 +6,9 @@ const prisma = new PrismaClient();
 require('dotenv').config();
 
 const tables = [
-  { model: 'admin', idField: 'admin_id' },
-  { model: 'course_in', idField: 'courseinstructor_id' },
-  { model: 'student', idField: 'student_id' },
-  { model: 'teacher', idField: 'teacher_id' }
+  { model: 'admin', idField: 'admin_id', passwordField: 'password' },
+  { model: 'course_in', idField: 'courseinstructor_id', passwordField: 'password' },
+  { model: 'student', idField: 'student_id', passwordField: 'password' }
 ];
 
 const findUser = async (model, username) => {
@@ -24,7 +23,7 @@ exports.login = async (req, res) => {
   try {
     for (const table of tables) {
       let user = await findUser(table.model, username);
-      if (user && user.password === password) {
+      if (user && user[table.passwordField] === password) {
         const token = jwt.sign(
           {
             id: user[table.idField],
@@ -35,8 +34,8 @@ exports.login = async (req, res) => {
           process.env.JWT_SECRET,
           { expiresIn: '1h' }
         );
-        const { password, ...userData } = user;
-        return res.status(200).json({ message: 'Login successful', user: userData, token });
+        const { [table.passwordField]: _, ...userData } = user;
+        return res.status(200).json({ message: 'Login successful', token });
       }
     }
 
