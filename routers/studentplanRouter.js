@@ -3,10 +3,9 @@ const router = express.Router();
 const {
   createStudentPlan,
   getStudentPlans,
-  getStudentPlanById,
   updateStudentPlan,
   deleteStudentPlan,
-  getStudentplan,
+  getStudentplanBySec,
   
 } = require('../controllers/studentplanController');
 
@@ -15,10 +14,8 @@ router.post('/createStudentPlan', createStudentPlan);
 
 // Read all Student Plans
 router.get('/getStudentPlans', getStudentPlans);
-router.get('/getStudentplan/:sec_id', getStudentplan);
+router.get('/getStudentplanBySec/:sec_id', getStudentplanBySec);
 
-// Read a Single Student Plan
-router.get('/getStudentPlanById/:studentplan_id', getStudentPlanById);
 
 // Update a Student Plan
 router.put('/updateStudentPlan/:studentplan_id', updateStudentPlan);

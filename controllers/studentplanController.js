@@ -22,25 +22,52 @@ exports.createStudentPlan = async (req, res) => {
 // Read all Student Plans
 exports.getStudentPlans = async (req, res) => {
   try {
-    const student_plans = await prisma.studentplan.findMany();
-    res.status(200).json(student_plans);
+    const studentplans = await prisma.studentplan.findMany({
+      include: {
+        section: true, // ดึงข้อมูล section ที่เกี่ยวข้อง
+      },
+    });
+
+    // ใช้ reduce เพื่อจัดกลุ่ม studentplan ตาม sec_name และนับจำนวน
+    const groupedStudentPlans = studentplans.reduce((acc, plan) => {
+      const secName = plan.section.sec_name; // ดึง sec_name จาก section ที่เกี่ยวข้อง
+      if (!acc[secName]) {
+        acc[secName] = 0;
+      }
+      acc[secName]++;
+      return acc;
+    }, {});
+
+    res.status(200).json(groupedStudentPlans);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// Read a Single Student Plan
-exports.getStudentPlanById = async (req, res) => {
+
+exports.getStudentplanBySec = async (req, res) => {
   try {
-    const { studentplan_id } = req.params;
-    const student_plan = await prisma.studentplan.findUnique({
-      where: { studentplan_id: Number(studentplan_id) },
+    const { sec_id } = req.params;
+
+    const studentplans = await prisma.studentplan.findMany({
+      where: { sec_id: Number(sec_id) },
+      include: {
+        course: true, // Include course data
+      },
     });
-    if (student_plan) {
-      res.status(200).json(student_plan);
-    } else {
-      res.status(404).json({ message: 'Student Plan not found' });
-    }
+
+    const groupedCourses = studentplans.reduce((acc, studentplan) => {
+      const key = `Semester ${studentplan.semester}, Year ${studentplan.semester}`;
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push({
+        ...studentplan.course, //  spread operator properties of the course object
+      });
+      return acc;
+    }, {});
+
+    res.status(200).json(groupedCourses);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -78,31 +105,3 @@ exports.deleteStudentPlan = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-exports.getStudentplan = async (req, res) => {
-    try {
-      const { sec_id } = req.params;
-  
-      const studentplans = await prisma.studentplan.findMany({
-        where: { sec_id: Number(sec_id) },
-        include: {
-          course: true, // Include course data
-        },
-      });
-  
-      const groupedCourses = studentplans.reduce((acc, studentplan) => {
-        const key = `Semester ${studentplan.semester}, Year ${studentplan.year}`;
-        if (!acc[key]) {
-          acc[key] = [];
-        }
-        acc[key].push({
-          ...studentplan.course, //  spread operator properties of the course object
-        });
-        return acc;
-      }, {});
-  
-      res.status(200).json(groupedCourses);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  };

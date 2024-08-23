@@ -24,70 +24,62 @@ exports.createRegister = async (req, res) => {
     });
 
     if (studentplans.length === 0) {
-      return res.status(404).json({ message: 'StudentPlan not found for the given sec_id' });
+      return res.status(404).json({ message: 'No StudentPlans found for the given sec_id' });
     }
 
-    // จัดกลุ่ม studentplan ตาม sec_id
-    const groupedStudentPlans = studentplans.reduce((acc, plan) => {
-      if (!acc[plan.sec_id]) {
-        acc[plan.sec_id] = [];
-      }
-      acc[plan.sec_id].push(plan);
-      return acc;
-    }, {});
+    // Loop ผ่าน studentplan และสร้าง register สำหรับแต่ละ plan
+    const registers = await Promise.all(
+      studentplans.map(async (plan) => {
+        return prisma.register.create({
+          data: {
+            student_id,
+            studentplan_id: plan.studentplan_id,
+          },
+        });
+      })
+    );
 
-    // ใช้ studentplan_id ของ studentplan แรก (ถ้ามีหลายรายการอาจต้องปรับ)
-    const studentplan_id = studentplans[0].studentplan_id;
-
-    // สร้าง register
-    const register = await prisma.register.create({
-      data: {
-        student_id,
-        grade,
-        teacher_name,
-        studentplan_id,
-      },
-    });
-
-    // ดึงข้อมูล register พร้อม studentplan ที่เกี่ยวข้อง
-    const registerWithStudentplan = await prisma.register.findUnique({
-      where: { register_id: register.register_id },
-      studentplan: {
-        include: {
-          course: true, // รวมข้อมูลของ course ใน studentplan
-        },
-      },
-    });
-
-    res.status(201).json({ register: registerWithStudentplan, groupedStudentPlans });
+    res.status(201).json(registers);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
-
 
 // Read all Registers
 exports.getRegisters = async (req, res) => {
   try {
     const { student_id } = req.params;
 
-    // หา register ที่เกี่ยวข้องกับ student_id
+    // Find registers for the given student_id
     const registers = await prisma.register.findMany({
       where: { student_id },
       include: {
-        studentplan: true, // รวมข้อมูลของ studentplan ที่เกี่ยวข้อง
+        studentplan: {
+          include: {
+            course: true, // Include course information in the studentplan
+          },
+        },
       },
     });
 
-    if (registers.length === 0) {
-      return res.status(404).json({ message: 'Registers not found for the given student_id' });
-    }
+    const groupedRegisters = registers.reduce((acc, register) => {
+      const { semester, year } = register.studentplan;
+      const semesterKey = `Semester ${semester}, Year ${year}`;
 
-    res.status(200).json(registers);
+      if (!acc[semesterKey]) {
+        acc[semesterKey] = [];
+      }
+
+      acc[semesterKey].push(register);
+      return acc;
+    }, {});
+
+    res.status(200).json(groupedRegisters);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 // Read a Single Register

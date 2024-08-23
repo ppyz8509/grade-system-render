@@ -124,8 +124,8 @@ model major_course {
 model register {
   register_id    Int         @id @default(autoincrement())
   student_id     String
-  grade          Grade
-  teacher_name   String      @db.VarChar(255)
+  grade          Grade?
+  teacher_name   String?      @db.VarChar(255)
   studentplan_id Int
   student        student     @relation(fields: [student_id], references: [student_id])
   studentplan    studentplan @relation(fields: [studentplan_id], references: [studentplan_id])
