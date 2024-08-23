@@ -38,7 +38,6 @@ exports.createMajor = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while creating the major' });
   }
 };
-
 exports.getAllMajors = async (req, res) => {
   try {
     const majors = await prisma.major.findMany();
@@ -48,7 +47,6 @@ exports.getAllMajors = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching majors' });
   }
 };
-
 exports.getMajorByCode = async (req, res) => {
   try {
     const { major_code } = req.params;
@@ -66,7 +64,6 @@ exports.getMajorByCode = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching the major' });
   }
 };
-
 exports.updateMajor = async (req, res) => {
   try {
     const { id } = req.params;
@@ -94,7 +91,6 @@ exports.updateMajor = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while updating the major' });
   }
 };
-
 exports.deleteMajor = async (req, res) => {
   const { major_id } = req.params;
 

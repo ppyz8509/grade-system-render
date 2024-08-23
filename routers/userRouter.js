@@ -7,7 +7,7 @@ const {
   deleteUser,
   getRole,
 } = require("../controllers/userController");
-const checkRole = require("../middlewares/checkRole");
+///const checkRole = require("../middlewares/checkRole");
 
 // ///admin zone
 // router.post("/createUser",createUser);

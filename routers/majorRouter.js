@@ -1,12 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const majorController = require("../controllers/majorController"); 
-//const checkRole = require('../middlewares/checkRole');
+const authorize = require('../middlewares/authorize');
 
 //major
 router.post("/createMajor", majorController.createMajor);
 router.get("/getMajorByCode/:major_code", majorController.getMajorByCode);
-router.get("/getAllMajors/", majorController.getAllMajors);
+router.get("/getAllMajors/",majorController.getAllMajors);
 router.put("/updateMajor/:id", majorController.updateMajor);
 router.delete("/deleteMajor/:major_id", majorController.deleteMajor);
 
