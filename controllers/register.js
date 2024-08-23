@@ -72,7 +72,13 @@ exports.createRegister = async (req, res) => {
 exports.getRegisters = async (req, res) => {
   try {
     const { student_id } = req.params;
+    const student = await prisma.student.findUnique({
+      where: { student_id },
+    });
 
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
     // Find registers for the given student_id
     const registers = await prisma.register.findMany({
       where: { student_id },
@@ -95,6 +101,7 @@ exports.getRegisters = async (req, res) => {
       }
 
       acc[semesterKey].push({        
+        register_id: register.register_id,
         course_id: course.course_id,
         courseNameTH: course.courseNameTH,
         courseNameENG: course.courseNameENG,
