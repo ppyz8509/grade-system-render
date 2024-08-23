@@ -4,10 +4,11 @@ const prisma = new PrismaClient();
 // Create an Admin
 exports.createAdmin = async (req, res) => {
   try {
-    const { username, firstname, lastname, phone, email } = req.body;
+    const { username, password,firstname, lastname, phone, email } = req.body;
     const admin = await prisma.admin.create({
       data: {
         username,
+        password,
         firstname,
         lastname,
         phone,

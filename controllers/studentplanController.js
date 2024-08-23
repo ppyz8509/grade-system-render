@@ -28,17 +28,7 @@ exports.getStudentPlans = async (req, res) => {
       },
     });
 
-    // ใช้ reduce เพื่อจัดกลุ่ม studentplan ตาม sec_name และนับจำนวน
-    const groupedStudentPlans = studentplans.reduce((acc, plan) => {
-      const secName = plan.section.sec_name; // ดึง sec_name จาก section ที่เกี่ยวข้อง
-      if (!acc[secName]) {
-        acc[secName] = 0;
-      }
-      acc[secName]++;
-      return acc;
-    }, {});
-
-    res.status(200).json(groupedStudentPlans);
+    res.status(200).json(studentplans);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

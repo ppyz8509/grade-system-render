@@ -28,6 +28,7 @@ enum FreeSubject {
 model admin {
   admin_id  Int     @id @default(autoincrement())
   username  String  @unique @db.VarChar(255)
+  password  String  @db.VarChar(255)
   firstname String  @db.VarChar(255)
   lastname  String  @db.VarChar(255)
   phone     String? @db.VarChar(10)
