@@ -145,7 +145,6 @@ exports.deleteMajor = async (req, res) => {
 
 
 
-
 // Category
 exports.createCategory = async (req, res) => {
   try {
@@ -264,9 +263,6 @@ exports.deleteCategory = async (req, res) => {
 
 
 
-
-
-
 // Group Major
 exports.createGroupMajor = async (req, res) => {
   try {
@@ -375,11 +371,6 @@ exports.deleteGroupMajor = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while deleting the GroupMajor' });
   }
 };
-
-
-
-
-
 
 
 
