@@ -388,7 +388,7 @@ exports.deleteGroupMajor = async (req, res) => {
 // Course
 exports.createCourse = async (req, res) => {
   try {
-    const { course_id, courseNameTH, courseNameENG, courseUnit, courseTheory, coursePractice, categoryResearch, category_id, group_id } = req.body;
+    const { course_id, courseNameTH, courseNameENG, courseUnit, courseTheory, coursePractice, categoryResearch, category_id, group_id, freesubject } = req.body;
 
     // ตรวจสอบว่ามีข้อมูลทุกช่องที่จำเป็นหรือไม่
     if (!course_id || !courseNameTH || !courseNameENG || !courseUnit || !courseTheory || !coursePractice) {
@@ -415,6 +415,7 @@ exports.createCourse = async (req, res) => {
         categoryResearch,
         category_id: category_id || null,
         group_id: group_id || null,
+        freesubject: freesubject || false, // เพิ่ม freesubject และตั้งค่า default เป็น false ถ้าไม่มีข้อมูล
       },
     });
 
