@@ -399,10 +399,25 @@ exports.deleteGroupMajor = async (req, res) => {
 // Course
 exports.createCourse = async (req, res) => {
   try {
-    const { course_id, courseNameTH, courseNameENG, courseUnit, courseTheory, coursePractice, categoryResearch, category_id, group_id, freesubject } = req.body;
+    const {
+      course_id,
+      courseNameTH,
+      courseNameENG,
+      courseUnit,
+      courseTheory,
+      coursePractice,
+      categoryResearch,
+      category_id,
+      group_id,
+      freesubject
+    } = req.body;
 
-    // ตรวจสอบว่ามีข้อมูลทุกช่องที่จำเป็นหรือไม่
-    if (!course_id || !courseNameTH || !courseNameENG || !courseUnit || !courseTheory || !coursePractice) {
+    // ตรวจสอบว่ามีข้อมูลทุกช่องที่จำเป็นหรือไม่ โดยไม่เช็คค่าที่เป็น 0
+    if (
+      course_id === undefined || courseNameTH === undefined || 
+      courseNameENG === undefined || courseUnit === undefined || 
+      courseTheory === undefined || coursePractice === undefined
+    ) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -412,9 +427,10 @@ exports.createCourse = async (req, res) => {
     });
 
     if (existingCourse) {
-      return res.status(409).json({ error: 'Course with this ID already exists' }); // แจ้งว่ารหัส course ซ้ำ
+      return res.status(409).json({ error: 'Course with this ID already exists' });
     }
 
+    // สร้าง course ใหม่
     const newCourse = await prisma.course.create({
       data: {
         course_id,
@@ -426,18 +442,15 @@ exports.createCourse = async (req, res) => {
         categoryResearch,
         category_id: category_id || null,
         group_id: group_id || null,
-        freesubject: freesubject || false, // เพิ่ม freesubject และตั้งค่า default เป็น false ถ้าไม่มีข้อมูล
+        freesubject: freesubject || false,
       },
     });
 
     res.status(201).json(newCourse);
   } catch (error) {
-    // ตรวจสอบชนิดของ error
     if (error.code === 'P2002') {
-      // P2002 คือ error ของ Prisma เมื่อมี unique constraint ที่ซ้ำ
       return res.status(409).json({ error: 'Course with this ID already exists' });
     }
-
     console.error('Error creating course:', error);
     res.status(500).json({ error: 'An unexpected error occurred while creating the course' });
   }
