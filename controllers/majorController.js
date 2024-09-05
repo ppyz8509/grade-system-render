@@ -6,21 +6,21 @@ exports.createMajor = async (req, res) => {
   try {
     const { major_code, majorNameTH, majorNameENG, majorYear, majorUnit, status } = req.body;
 
-    // Check if all required fields are provided
+    // ตรวจสอบว่ามีข้อมูลทุกช่องที่จำเป็นหรือไม่
     if (!major_code || !majorNameTH || !majorNameENG || !majorYear || !majorUnit) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Check if the major_code already exists
+    // ตรวจสอบว่า major_code มีอยู่แล้วหรือไม่
     const existingMajor = await prisma.major.findFirst({
       where: { major_code: major_code }
     });
 
     if (existingMajor) {
-      return res.status(400).json({ error: 'Major with this code already exists' });
+      return res.status(409).json({ error: 'Major code already exists' }); // 409 Conflict สำหรับข้อมูลที่ซ้ำ
     }
 
-    // Create new major without specifying major_id
+    // สร้าง major ใหม่
     const newMajor = await prisma.major.create({
       data: {
         major_code,
@@ -34,8 +34,14 @@ exports.createMajor = async (req, res) => {
 
     res.status(201).json(newMajor);
   } catch (error) {
+    // ตรวจสอบชนิดของ error
+    if (error.code === 'P2002') {
+      // P2002 คือ error ของ Prisma เมื่อมี unique constraint ที่ซ้ำ
+      return res.status(409).json({ error: 'Major code already exists' });
+    }
+
     console.error('Error creating major:', error);
-    res.status(500).json({ error: 'An error occurred while creating the major' });
+    res.status(500).json({ error: 'An unexpected error occurred while creating the major' });
   }
 };
 exports.getAllMajors = async (req, res) => {
@@ -239,13 +245,17 @@ exports.deleteCategory = async (req, res) => {
       return res.status(404).json({ error: 'Category not found' });
     }
 
-    // Delete GroupMajor associated with the Category
-    await prisma.group_major.deleteMany({
-      where: { category_id: categoryId }
+    // Delete Courses associated with the GroupMajor within the Category
+    await prisma.course.deleteMany({
+      where: {
+        group_major: {
+          category_id: categoryId
+        }
+      }
     });
 
-    // Delete Courses associated with the Category
-    await prisma.course.deleteMany({
+    // Delete GroupMajor associated with the Category
+    await prisma.group_major.deleteMany({
       where: { category_id: categoryId }
     });
 
@@ -260,6 +270,7 @@ exports.deleteCategory = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while deleting the Category' });
   }
 };
+
 
 
 
@@ -379,6 +390,20 @@ exports.createCourse = async (req, res) => {
   try {
     const { course_id, courseNameTH, courseNameENG, courseUnit, courseTheory, coursePractice, categoryResearch, category_id, group_id } = req.body;
 
+    // ตรวจสอบว่ามีข้อมูลทุกช่องที่จำเป็นหรือไม่
+    if (!course_id || !courseNameTH || !courseNameENG || !courseUnit || !courseTheory || !coursePractice) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // ตรวจสอบว่า course_id มีอยู่แล้วหรือไม่
+    const existingCourse = await prisma.course.findFirst({
+      where: { course_id: course_id }
+    });
+
+    if (existingCourse) {
+      return res.status(409).json({ error: 'Course with this ID already exists' }); // แจ้งว่ารหัส course ซ้ำ
+    }
+
     const newCourse = await prisma.course.create({
       data: {
         course_id,
@@ -395,8 +420,14 @@ exports.createCourse = async (req, res) => {
 
     res.status(201).json(newCourse);
   } catch (error) {
+    // ตรวจสอบชนิดของ error
+    if (error.code === 'P2002') {
+      // P2002 คือ error ของ Prisma เมื่อมี unique constraint ที่ซ้ำ
+      return res.status(409).json({ error: 'Course with this ID already exists' });
+    }
+
     console.error('Error creating course:', error);
-    res.status(500).json({ error: 'An error occurred while creating the course' });
+    res.status(500).json({ error: 'An unexpected error occurred while creating the course' });
   }
 };
 exports.getAllCourses = async (req, res) => {
