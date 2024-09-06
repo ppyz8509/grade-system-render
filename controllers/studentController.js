@@ -85,3 +85,53 @@ exports.deleteStudent = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.updateStudentInfo = async (req, res) => {
+  try {
+    const { student_id } = req.params; // รับ student_id จากพารามิเตอร์ URL
+    const {
+      firstnameEng,
+      lastnameEng,
+      personal_id,
+      corps,
+      center,
+      major,
+      minor_subject,
+      status,
+      entered_join,
+      pre_educational,
+      submission_status,
+      graduated_from,
+      advisor,
+      address
+    } = req.body; // ข้อมูลที่ต้องการอัปเดตจาก request body
+
+    // อัปเดตข้อมูลนักเรียน
+    const updatedStudent = await prisma.student.update({
+      where: {
+        student_id: student_id
+      },
+      data: {
+        firstnameEng,
+        lastnameEng,
+        personal_id,
+        corps,
+        center,
+        major,
+        minor_subject,
+        status,
+        entered_join,
+        pre_educational,
+        submission_status,
+        graduated_from,
+        advisor,
+        address
+      }
+    });
+
+    // ส่งข้อมูลนักเรียนที่อัปเดตแล้วกลับไป
+    res.status(200).json(updatedStudent);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

@@ -111,6 +111,7 @@ model major {
   status       Status         @default(ACTIVE)
   category     category[]
   major_course major_course[]
+  studentplan studentplan[]
 }
 
 model major_course {
@@ -138,11 +139,11 @@ model section {
   major_id    String        @db.VarChar(50)
   advisor     advisor[]
   student     student[]
-  studentplan studentplan[]
+
 }
 
 model student {
-  student_id String        @id
+  student_id String     @id
   username   String     @unique @db.VarChar(255)
   password   String     @db.VarChar(255)
   firstname  String     @db.VarChar(255)
@@ -153,22 +154,37 @@ model student {
   register   register[]
   section    section    @relation(fields: [sec_id], references: [sec_id])
 
+  //info
+  firstnameEng      String?
+  lastnameEng       String?
+  personal_id       String?      //เลขประจำตัวประชาชน
+  corps             String?      //คณะ
+  center            String?      //ศูนย์
+  major             String?      //สาขาวิชา
+  minor_subject     String?      //วิชาโท
+  status            String?      //สถานภาพ
+  entered_join      String?      //วิธีรับเข้า
+  pre_educational   String?      //วุฒิก่อนเข้ารับการศึกษา
+  submission_status String?      //สถานะส่งวุฒิการศึกษา
+  graduated_from    String?      //จบการศึกษาจาก
+  advisor           String?      //advisor
+  address           String?      //ที่อยู่
 }
 
 model studentplan {
   studentplan_id Int        @id @default(autoincrement())
-  sec_id         Int
+  major_id         Int
   year           String     @db.VarChar(50)
   semester       Int
   course_id      String
   register       register[]
-  section        section    @relation(fields: [sec_id], references: [sec_id])
+  major          major      @relation(fields: [major_id], references: [major_id])
   course         course     @relation(fields: [course_id], references: [course_id])
-
 }
 
 model teacher {
   teacher_id Int    @id @default(autoincrement())
+  titlename  String @db.VarChar(255)
   firstname  String @db.VarChar(255)
   lastname   String @db.VarChar(255)
 }

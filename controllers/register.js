@@ -1,5 +1,4 @@
 const { PrismaClient } = require('@prisma/client');
-const { register } = require('../models/prisma');
 const prisma = new PrismaClient();
 
 exports.createRegister = async (req, res) => {
