@@ -25,6 +25,7 @@ enum FreeSubject {
   false
 }
 
+
 model academic_disciplines {
   academic_id   Int    @id @default(autoincrement())
   academic_name String
@@ -93,6 +94,7 @@ model course {
   studentplan      studentplan[]
 }
 
+
 model course_in {
   courseinstructor_id Int     @id @default(autoincrement())
   username            String  @unique @db.VarChar(255)
@@ -101,6 +103,7 @@ model course_in {
   lastname            String  @db.VarChar(255)
   phone               String? @db.VarChar(10)
   email               String? @db.VarChar(255)
+
 
   academic_id Int
   academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
@@ -114,6 +117,7 @@ model group_major {
   course      course[]
   category    category @relation(fields: [category_id], references: [category_id])
 }
+
 
 enum Status {
   ACTIVE
@@ -130,7 +134,6 @@ model major {
   status       Status         @default(ACTIVE)
   category     category[]
   major_course major_course[]
-
   academic_id Int
   academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
 }
@@ -146,14 +149,17 @@ model major_course {
 model register {
   register_id    Int         @id @default(autoincrement())
   student_id     String
+
   grade          Grade?
   teacher_name   String?     @db.VarChar(255)
+
   studentplan_id Int
   student        student     @relation(fields: [student_id], references: [student_id])
   studentplan    studentplan @relation(fields: [studentplan_id], references: [studentplan_id])
 }
 
 model section {
+
   sec_id   Int       @id @default(autoincrement())
   sec_name String    @db.VarChar(255)
 
@@ -198,19 +204,24 @@ model student {
 
 model studentplan {
   studentplan_id Int        @id @default(autoincrement())
+
   year           String     @db.VarChar(50)
   semester       Int
   course_id      String
   register       register[]
+
   course         course     @relation(fields: [course_id], references: [course_id])
 
   academic_id Int
   academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
+
 }
 
 model teacher {
   teacher_id Int    @id @default(autoincrement())
+
   titlename  String @db.VarChar(255)
+
   firstname  String @db.VarChar(255)
   lastname   String @db.VarChar(255)
 }

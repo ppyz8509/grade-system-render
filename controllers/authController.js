@@ -18,6 +18,7 @@ const findUser = async (model, username, include) => {
   return await prisma[model].findUnique({
     where: { username },
     include: include
+
   });
 };
 
@@ -29,7 +30,9 @@ exports.login = async (req, res) => {
     // ตรวจสอบผู้ใช้ในแต่ละตารางตามลำดับ
     for (const table of tables) {
       // ค้นหาผู้ใช้จากตารางที่กำหนด
+      
       let user = await findUser(table.model, username, table.include);
+    
       // ตรวจสอบรหัสผ่านของผู้ใช้
       if (user && user[table.passwordField] === password) {
         // กำหนดบทบาทของผู้ใช้ตามตารางที่พบ
@@ -46,8 +49,10 @@ exports.login = async (req, res) => {
             username: user.username,         // ชื่อผู้ใช้
             firstname: user.firstname,       // ชื่อจริงของผู้ใช้
             lastname: user.lastname,         // นามสกุลของผู้ใช้
+
             role: role,                       // บทบาทของผู้ใช้
             academic: user.academic          // ข้อมูล academic ของผู้ใช้
+
           },
           process.env.JWT_SECRET,            // สำหรับการเข้ารหัส JWT
           { expiresIn: '1h' }                // เวลาในการหมดอายุของ token
