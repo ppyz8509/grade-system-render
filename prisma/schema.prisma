@@ -25,6 +25,20 @@ enum FreeSubject {
   false
 }
 
+
+model academic_disciplines {
+  academic_id   Int    @id @default(autoincrement())
+  academic_name String
+
+  major       major[]
+  admin       admin[]
+  advisor     advisor[]
+  course_in   course_in[]
+  studnet     student[]
+  studentplan studentplan[]
+  section     section[]
+}
+
 model admin {
   admin_id  Int     @id @default(autoincrement())
   username  String  @unique @db.VarChar(255)
@@ -33,6 +47,9 @@ model admin {
   lastname  String  @db.VarChar(255)
   phone     String? @db.VarChar(10)
   email     String? @db.VarChar(255)
+
+  academic_id Int
+  academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
 }
 
 model advisor {
@@ -45,13 +62,16 @@ model advisor {
   phone      String? @db.VarChar(50)
   email      String? @db.VarChar(255)
   section    section @relation(fields: [sec_id], references: [sec_id])
+
+  academic_id Int
+  academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
 }
 
 model category {
   category_id   Int           @id @default(autoincrement())
   category_name String        @db.VarChar(255)
   category_unit Int
-  major_id      Int           
+  major_id      Int
   major         major         @relation(fields: [major_id], references: [major_id])
   course        course[]
   group_major   group_major[]
@@ -74,6 +94,7 @@ model course {
   studentplan      studentplan[]
 }
 
+
 model course_in {
   courseinstructor_id Int     @id @default(autoincrement())
   username            String  @unique @db.VarChar(255)
@@ -82,6 +103,10 @@ model course_in {
   lastname            String  @db.VarChar(255)
   phone               String? @db.VarChar(10)
   email               String? @db.VarChar(255)
+
+
+  academic_id Int
+  academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
 }
 
 model group_major {
@@ -93,7 +118,8 @@ model group_major {
   category    category @relation(fields: [category_id], references: [category_id])
 }
 
-enum  Status {
+
+enum Status {
   ACTIVE
   INACTIVE
 }
@@ -108,11 +134,13 @@ model major {
   status       Status         @default(ACTIVE)
   category     category[]
   major_course major_course[]
+  academic_id Int
+  academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
 }
 
 model major_course {
   mc_id     Int    @id @default(autoincrement())
-  major_id  Int  
+  major_id  Int
   course_id String
   course    course @relation(fields: [course_id], references: [course_id])
   major     major  @relation(fields: [major_id], references: [major_id])
@@ -121,24 +149,29 @@ model major_course {
 model register {
   register_id    Int         @id @default(autoincrement())
   student_id     String
-  grade          Grade? 
-  teacher_name   String?      @db.VarChar(255)
+
+  grade          Grade?
+  teacher_name   String?     @db.VarChar(255)
+
   studentplan_id Int
   student        student     @relation(fields: [student_id], references: [student_id])
   studentplan    studentplan @relation(fields: [studentplan_id], references: [studentplan_id])
 }
 
 model section {
-  sec_id      Int           @id @default(autoincrement())
-  sec_name    String        @db.VarChar(255)
-  major_id    String        @db.VarChar(50)
-  advisor     advisor[]
-  student     student[]
-  studentplan studentplan[]
+
+  sec_id   Int       @id @default(autoincrement())
+  sec_name String    @db.VarChar(255)
+
+  advisor  advisor[]
+  student  student[]
+
+  academic_id Int
+  academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
 }
 
 model student {
-  student_id String        @id
+  student_id String     @id
   username   String     @unique @db.VarChar(255)
   password   String     @db.VarChar(255)
   firstname  String     @db.VarChar(255)
@@ -148,21 +181,47 @@ model student {
   sec_id     Int
   register   register[]
   section    section    @relation(fields: [sec_id], references: [sec_id])
+
+  academic_id Int
+  academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
+
+  //info
+  firstnameEng      String?
+  lastnameEng       String?
+  personal_id       String? //เลขประจำตัวประชาชน
+  corps             String? //คณะ
+  center            String? //ศูนย์
+  major             String? //สาขาวิชา
+  minor_subject     String? //วิชาโท
+  status            String? //สถานภาพ
+  entered_join      String? //วิธีรับเข้า
+  pre_educational   String? //วุฒิก่อนเข้ารับการศึกษา
+  submission_status String? //สถานะส่งวุฒิการศึกษา
+  graduated_from    String? //จบการศึกษาจาก
+  advisor           String? //advisor
+  address           String? //ที่อยู่
 }
 
 model studentplan {
   studentplan_id Int        @id @default(autoincrement())
-  sec_id         Int
+
   year           String     @db.VarChar(50)
   semester       Int
   course_id      String
   register       register[]
-  section        section    @relation(fields: [sec_id], references: [sec_id])
+
   course         course     @relation(fields: [course_id], references: [course_id])
+
+  academic_id Int
+  academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
+
 }
 
 model teacher {
   teacher_id Int    @id @default(autoincrement())
+
+  titlename  String @db.VarChar(255)
+
   firstname  String @db.VarChar(255)
   lastname   String @db.VarChar(255)
 }

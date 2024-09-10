@@ -1,37 +1,44 @@
+
 const jwt = require('jsonwebtoken');
 
-const authorize = (roles = []) => {
-  // คืนค่า middleware ที่ตรวจสอบสิทธิ์การเข้าถึง
-  return (req, res, next) => {
-    // ตรวจสอบการมีอยู่ของ Bearer token
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      // หากไม่มี Bearer token
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-    
-    // ดึง token จาก header
-    const token = authHeader.split(' ')[1];
+const authenticateToken = (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
 
-    try {
-      // ตรวจสอบ ถอดรหัสJWT
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  if (!token) return res.status(401).json({ message: 'Access denied' });
 
-      // ตรวจสอบสิทธิ์การเข้าถึง 
-      if (roles.length && !roles.includes(decoded.role)) {
-        // หากบทบาทของผู้ใช้ไม่ตรงกับบทบาทที่อนุญาต
-        return res.status(403).json({ message: 'Forbidden: You do not have access to this resource' });
-      }
-
-      // เก็บข้อมูลผู้ใช้ที่ถอดรหัสแล้วใน request object
-      req.user = decoded;
-      // เรียกใช้งาน middleware ถัดไป
-      next();
-    } catch (error) {
-      // หาก token ไม่ถูกต้องหรือหมดอายุ
-      return res.status(401).json({ message: 'Invalid token' });
-    }
-  };
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ message: 'Invalid token' });
+    req.user = user; // Attach user info to request object
+    next();
+  });
 };
 
-module.exports = authorize;
+// Middleware to check if user is admin
+const isAdmin = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Access forbidden: Admins only' });
+  }
+  next();
+};
+
+const isCourse_in = (req, res, next) => {
+  if (req.user.role !== 'course_in') {
+    return res.status(403).json({ message: 'Access forbidden: course_in only' });
+  }
+  next();
+};
+
+const isAdvisor = (req, res, next) => {
+  if (req.user.role !== 'advisor') {
+    return res.status(403).json({ message: 'Access forbidden: advisor only' });
+  }
+  next();
+};
+
+module.exports = { 
+  authenticateToken, 
+  isAdmin,
+  isCourse_in,
+  isAdvisor
+
+};

@@ -1,199 +1,147 @@
-const { Role } = require("@prisma/client");
-const prisma = require("../models/prisma");
-const bcrypt = require("bcryptjs");
-const { json } = require("express");
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+const jwt = require('jsonwebtoken');
 
-
-exports.createStudent = async (req, res) => {
-
-  console.log("Request Body:", req.body);
-
-  const { 
-    S_id,
-    S_firstname,
-    S_lastname,
-    S_password,
-    S_phone,
-    S_email,
-    room,
-   } = req.body;
-  
-  
-
-  const exitingclassroom = await prisma.classroom.findMany()
-
-  if (!exitingclassroom) {
-    return res.status(400).json({message: "Room exting"})
-    
-  }
-  console.log(exitingclassroom);
-
-  const existingStudentId = await prisma.student.findFirst({
-    where: { S_id },
-  })
-
-  if (existingStudentId) {
-    return res.status(400).json({message: "Student Id already!!!!"})
-    
-  }
-
-
-
-  const roomMatch = exitingclassroom.every(exitingRoom => exitingRoom.roomname !== room);
-  if (roomMatch) {
-     return res.status(400).json({ message: "room not match !!!!" });
-  }
-  
-
+const getUserFromToken = (token) => {
   try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    return decoded;
+  } catch (err) {
+    return null;
+  }
   
-    const hashedPassword = await bcrypt.hash(S_password, 10);
+};
+exports.createAdvisor = async (req, res) => {
+  try {
+    const { username, password, firstname, lastname, phone, email, sec_id } = req.body;
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (!username || !password || !firstname || !lastname || !sec_id) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+    const existingAdvisor = await prisma.advisor.findUnique({ where: { username } });
+    if (existingAdvisor) {
+      return res.status(409).json({ message: 'Username already exists' });
+    }
 
-    const newStudent = await prisma.student.create({
-      data: 
-      {
-        S_id: S_id,
-        S_firstname: S_firstname,
-        S_lastname: S_lastname,
-        S_password: hashedPassword,
-        S_phone: S_phone,
-        S_email: S_email,
-        room: room,
+    const user = getUserFromToken(token);
+    console.log(user);
+
+    if (!user || !user.academic) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+
+    const advisor = await prisma.advisor.create({
+      data: {
+        username,
+        password,
+        firstname,
+        lastname,
+        phone,
+        email,
+        sec_id,
+        academic_id: user.academic.academic_id,
+      },
+    });
+    return res.status(201).json(advisor);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+// Read all Advisors
+exports.getAdvisors = async (req, res) => {
+  try {
+    const advisors = await prisma.advisor.findMany();
+    if (advisors.length === 0) {
+      return res.status(404).json({ message: 'Admin have no' });
+    }
+    return res.status(200).json(advisors);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+
+exports.getAdvisorById = async (req, res) => {
+  try {
+    const { advisor_id } = req.params;
+
+    if (isNaN(advisor_id)) {
+      return res.status(400).json({ message: 'ID is not number' });
+    }
+
+    const advisor = await prisma.advisor.findUnique({
+      where: { advisor_id: Number(advisor_id) },
+    });
+
+    if (!advisor) {
+      return res.status(404).json({ message: 'Advisor not found' });
+    } 
+    return res.status(200).json(advisor);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+exports.updateAdvisor = async (req, res) => {
+  try {
+    const { advisor_id } = req.params;
+    const { username, password, firstname, lastname, phone, email, sec_id } = req.body;
+
+    if (isNaN(advisor_id)) {
+      return res.status(400).json({ message: 'ID is not number' });
+    }
+    const AdvisorInExists = await prisma.advisor.findUnique({
+      where: { advisor_id: Number(advisor_id) },
+    });
+
+    if (!AdvisorInExists) {
+      return res.status(404).json({ message: 'Advisor not found' });
+    }
+
+    const advisor = await prisma.advisor.update({
+      where: { advisor_id: Number(advisor_id) },
+      data: {
+        username,
+        password,
+        firstname,
+        lastname,
+        phone,
+        email,
+        sec_id,
       },
     });
 
-    return res.status(201).json(newStudent);
+    return res.status(200).json(advisor);
   } catch (error) {
-    console.error("Error creating Student:", error);
-    res.status(400).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
-exports.getAllStudents = async (req,res) => {
-    try {
-        const student = await prisma.student.findMany({
-            where: {role: 'STUDENT'}
-        });
-        res.status(200).json(student)
-    } catch (error) {
-        console.error("Error fetching student:", error.message);
-        res.status(400).json({ error: error.message });
-    }
-}
-
-exports.getStudentById = async (req,res) => {
-
-  console.log("Request params:", req.params);
-    const { S_id } = req.params
-    try {
-        const student = await prisma.student.findUnique({
-            where: {S_id: S_id}
-            
-        });
-        console.log(student);
-
-        if (!student) {
-
-          res.status(404).json({ message: `Id ${S_id} not found`})
-          return;
-        }
-
-        if ( student.role != 'STUDENT') {
-          
-          return res.status(404).json({ message: `ID ${S_id} are not Student!!!!` });
-        } 
-        
-        
-        res.status(200).json(student)
-        
-    } catch (error) {
-        console.error("Error fetching student:", error.message);
-        res.status(400).json({ error: error.message });
-    }
-}
-
-exports.getStudentByRoom = async (req,res) => {
-  const { room } = req.params
-  const convertedRoom = room.replace(/\-/g,"/")
+exports.deleteAdvisor = async (req, res) => {
   try {
-      const student = await prisma.student.findMany({
-        where: { room: convertedRoom, } ,
-      })
-      if (student.length === 0) {
-        res.status(404).json({ message: `Room ${convertedRoom} not found`});
-        return;
-      }
-      res.status(200).json(student)
-  } catch (error) {
-      console.error("Error fetching student:", error.message);
-      res.status(400).json({ error: error.message });
-  }
-}
+    const { advisor_id } = req.params;
 
-
-exports.updateStudent = async (req, res) => {
-  const { S_id } = req.params;
-  const {S_firstname, S_lastname,S_password,S_phone,S_email,room} = req.body
-
-  try {
-    const existingUser = await prisma.student.findUnique({
-      where: {S_id: S_id}
-    })
-    if (!existingUser) {
-      return res.status(404).json({ message: `Student with ID ${S_id} not found` });
+    if (isNaN(advisor_id)) {
+      return res.status(400).json({ message: 'ID is not number' });
     }
 
+    const AdvisorInExists = await prisma.advisor.findUnique({
+      where: { advisor_id: Number(advisor_id) },
+    });
 
-    if ( existingUser.role != 'STUDENT') {
-      return res.status(404).json({ message: `ID ${S_id} are not Student!!!!` });
+    if (!AdvisorInExists) {
+      return res.status(404).json({ message: 'Advisor not found' });
     }
-    console.log(existingUser);
 
-    const updateStudent = await prisma.student.update({
-      where: { S_id: (S_id) },
-      data: {
-        S_firstname: S_firstname,
-        S_lastname: S_lastname,
-        S_password: S_password,
-        S_phone: S_phone,
-        S_email: S_email,
-        room: room
+    const advisor = await prisma.advisor.delete({
+      where: { advisor_id: Number(advisor_id) },
+    });
 
-
-      }
-    })
-
-      res.status(200).json({message: `update Success!!!!`, updateStudent})
+    return res.status(200).json(advisor);
   } catch (error) {
-    console.error("Error updating user:", error.message);
-    res.status(400).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
-
-
-exports.deleteStudent = async (req, res) => {
-  console.log("Request params:", req.params);
-  const { S_id } = req.params;
-
-  try {
-    // Check if the student with the given ID and username exists
-    const existingStudent = await prisma.student.findFirst({
-      where: { S_id: S_id},
-    });
-
-    if (!existingStudent) {
-      return res.status(404).json({ error: `Student with ID ${S_id} not found` });
-    }
-
-    // Delete the student
-    await prisma.student.delete({
-      where: {S_id: S_id}
-      
-    });
-
-    return res.status(200).json({ message: `Student with ID ${S_id} has been deleted successfully` });
-  } catch (error) {
-    console.error('Error deleting student:', error);
-    res.status(500).json({ error: 'Unable to delete student', details: error.message });
-  }
-}
