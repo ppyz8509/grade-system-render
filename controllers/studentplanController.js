@@ -15,26 +15,49 @@ const getUserFromToken = (token) => {
 
 exports.createStudentPlan = async (req, res) => {
   try {
-    const { year, semester, course_id } = req.body;
+    const { year, semester, course_id,academic_id } = req.body;
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (!year || !semester || !course_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    const existingCourse = await prisma.course_in.findFirst({
-      where: {year,semester,course_id,},
-    });
-    if (existingCourse) {
-      return res.status(409).json({ message: 'Course already exists' });
+    const user = getUserFromToken(token);
+    console.log(user);
+
+    if (!user || !user.academic) {
+      return res.status(403).json({ message: 'Unauthorized' });
     }
 
+    // ค้นหาข้อมูลที่มี year, semester, และ course_id ตรงกัน
+    const existingCourse = await prisma.studentplan.findFirst({
+      where: {
+        year: year,
+        semester: semester,
+        course_id: course_id,
+        academic_id: user.academic.academic_id,
+      },
+    });
+    console.log("existingCourse", existingCourse);
 
+    if (existingCourse) {
+      return res.status(400).json({ message: 'Student plan already exists in a different academic' });
+    }
+    // // ถ้าพบข้อมูลที่ตรงกัน
+    // if (existingCourse) {
+    //   // ตรวจสอบว่า academic_id ของ existingCourse ตรงกับ academic_id ของผู้ใช้ที่ล็อกอินหรือไม่
+    //   if (existingCourse.academic_id !== user.academic.academic_id) {
+    //     return res.status(400).json({ message: 'Student plan already exists in a different academic' });
+    //   }
+    // }
+
+    // ถ้าทุกเงื่อนไขผ่านให้สร้าง student plan ใหม่
     const student_plan = await prisma.studentplan.create({
       data: {
         year,
         semester,
         course_id,
+        academic_id: user.academic.academic_id,
       },
     });
     res.status(201).json(student_plan);
@@ -45,12 +68,21 @@ exports.createStudentPlan = async (req, res) => {
 };
 
 
+
 exports.getStudentPlans = async (req, res) => {
   try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+
+
+    const user = getUserFromToken(token);
+    if (!user || !user.academic) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
     const studentplans = await prisma.studentplan.findMany({
-      include: {
-        section: true, // ดึงข้อมูล section ที่เกี่ยวข้อง
-      },
+        where: {
+          academic_id: user.academic.academic_id
+        },
     });
 
     res.status(200).json(studentplans);
