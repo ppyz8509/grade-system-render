@@ -1,10 +1,20 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-
+const jwt = require('jsonwebtoken');
+const getUserFromToken = (token) => {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    return decoded;
+  } catch (err) {
+    return null;
+  }
+  
+};
 //major
 exports.createMajor = async (req, res) => {
   try {
     const { major_code, majorNameTH, majorNameENG, majorYear, majorUnit, status } = req.body;
+    const token = req.header('Authorization')?.replace('Bearer ', '');
 
     // ตรวจสอบว่ามีข้อมูลทุกช่องที่จำเป็นหรือไม่
     if (!major_code || !majorNameTH || !majorNameENG || !majorYear || !majorUnit) {
@@ -19,7 +29,12 @@ exports.createMajor = async (req, res) => {
     if (existingMajor) {
       return res.status(409).json({ error: 'Major code already exists' });
     }
+    const user = getUserFromToken(token);
+    console.log(user);
 
+    if (!user || !user.academic) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
     // สร้าง major ใหม่
     const newMajor = await prisma.major.create({
       data: {
@@ -28,7 +43,8 @@ exports.createMajor = async (req, res) => {
         majorNameENG,
         majorYear,
         majorUnit,
-        status
+        status,
+        academic_id: user.academic.academic_id,
       }
     });
 

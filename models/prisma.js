@@ -2,12 +2,12 @@ const { PrismaClient } = require("@prisma/client");
 
 const prismaClient = new PrismaClient();
 
-const connectDb = () => {
+const connectDb = async () => {
   try {
-    prismaClient.$connect;
+    await prismaClient.$connect();
     console.log("connected to db");
   } catch (error) {
-    console.log(error);
+    console.log("Failed to connect to db:", error);
   }
 };
 connectDb();

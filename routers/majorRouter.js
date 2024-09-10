@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const majorController = require("../controllers/majorController"); 
-const authorize = require('../middlewares/authorize');///authorize(['role']);
+const { authenticateToken, isAdmin, isCourse_in }  = require("../middlewares/authorize");
 
 //major
-router.post("/createMajor", majorController.createMajor);
+router.post("/createMajor",authenticateToken,isCourse_in, majorController.createMajor);
 router.get("/getMajorByCode/:major_code", majorController.getMajorByCode);
 router.get("/getAllMajors/",majorController.getAllMajors);
 router.put("/updateMajor/:id", majorController.updateMajor);

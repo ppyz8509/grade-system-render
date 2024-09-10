@@ -1,12 +1,12 @@
 require('dotenv').config();
 const express = require("express");
 const cors = require("cors");
-const authRouter = require("./routers/authRouter");
+const prismaClient = require('./models/prisma');
 
-const userRouter = require("./routers/userRouter");
+const authRouter = require("./routers/authRouter");
 const course_in_Router = require("./routers/course_in_Router");
 const majorRouter = require("./routers/majorRouter");
-const amdinRouter = require("./routers/adminRouter");
+const adminRouter = require("./routers/adminRouter");
 const studentRouter = require('./routers/studentRouter');
 const teacherRouter = require('./routers/teacherRouter');
 const registerRouter = require('./routers/registerRouter');
@@ -16,10 +16,9 @@ const section = require('./routers/sectionRouter')
 
 
 
-dotenv.config();
-
 
 const app = express();
+
 
 // CORS configuration
 app.use(cors({
@@ -33,10 +32,9 @@ app.use(express.json());
 
 // Combine Routers
 app.use("/api", authRouter);
-app.use("/api", userRouter);
 app.use("/api", majorRouter);
 app.use("/api", course_in_Router);
-app.use("/api", amdinRouter);
+app.use("/api", adminRouter);
 app.use('/api', studentRouter);
 app.use('/api', teacherRouter);
 app.use('/api', registerRouter);
