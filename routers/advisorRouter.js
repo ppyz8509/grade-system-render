@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+
 const {
 
     createAdvisor,
@@ -15,5 +16,6 @@ router.get('/getAdvisors', getAdvisors);
 router.get('/getAdvisorById/:advisor_id', getAdvisorById);
 router.put('/updateAdvisor/:advisor_id',authenticateToken,isCourse_in, updateAdvisor);
 router.delete('/deleteAdvisor/:advisor_id',authenticateToken,isCourse_in, deleteAdvisor);
+
 
 module.exports = router;
