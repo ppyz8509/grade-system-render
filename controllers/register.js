@@ -66,7 +66,6 @@ exports.createRegister = async (req, res) => {
   }
 };
 
-
 // Read all Registers
 exports.getRegisters = async (req, res) => {
   try {
@@ -117,8 +116,6 @@ exports.getRegisters = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-
 
 // Read a Single Register
 exports.getRegisterById = async (req, res) => {

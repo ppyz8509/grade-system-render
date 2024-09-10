@@ -1,14 +1,36 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const jwt = require('jsonwebtoken');
 
-
+const getUserFromToken = (token) => {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    return decoded;
+  } catch (err) {
+    return null;
+  }
+  
+};
 exports.createAdvisor = async (req, res) => {
   try {
     const { username, password, firstname, lastname, phone, email, sec_id } = req.body;
+    const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!username || !password || !firstname || !lastname || !sec_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
+    const existingAdvisor = await prisma.advisor.findUnique({ where: { username } });
+    if (existingAdvisor) {
+      return res.status(409).json({ message: 'Username already exists' });
+    }
+
+    const user = getUserFromToken(token);
+    console.log(user);
+
+    if (!user || !user.academic) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
 
     const advisor = await prisma.advisor.create({
       data: {
@@ -19,12 +41,12 @@ exports.createAdvisor = async (req, res) => {
         phone,
         email,
         sec_id,
+        academic_id: user.academic.academic_id,
       },
     });
-    res.status(201).json(advisor);
+    return res.status(201).json(advisor);
   } catch (error) {
-    console.error('Error creating advisor:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -32,10 +54,12 @@ exports.createAdvisor = async (req, res) => {
 exports.getAdvisors = async (req, res) => {
   try {
     const advisors = await prisma.advisor.findMany();
-    res.status(200).json(advisors);
+    if (advisors.length === 0) {
+      return res.status(404).json({ message: 'Admin have no' });
+    }
+    return res.status(200).json(advisors);
   } catch (error) {
-    console.error('Error fetching advisors:', error); 
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -45,21 +69,19 @@ exports.getAdvisorById = async (req, res) => {
     const { advisor_id } = req.params;
 
     if (isNaN(advisor_id)) {
-      return res.status(400).json({ message: 'Invalid advisor_id' });
+      return res.status(400).json({ message: 'ID is not number' });
     }
 
     const advisor = await prisma.advisor.findUnique({
       where: { advisor_id: Number(advisor_id) },
     });
 
-    if (advisor) {
-      res.status(200).json(advisor);
-    } else {
-      res.status(404).json({ message: 'Advisor not found' });
-    }
+    if (!advisor) {
+      return res.status(404).json({ message: 'Advisor not found' });
+    } 
+    return res.status(200).json(advisor);
   } catch (error) {
-    console.error('Error fetching advisor by ID:', error); 
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -69,11 +91,14 @@ exports.updateAdvisor = async (req, res) => {
     const { username, password, firstname, lastname, phone, email, sec_id } = req.body;
 
     if (isNaN(advisor_id)) {
-      return res.status(400).json({ message: 'Invalid advisor_id' });
+      return res.status(400).json({ message: 'ID is not number' });
     }
+    const AdvisorInExists = await prisma.advisor.findUnique({
+      where: { advisor_id: Number(advisor_id) },
+    });
 
-    if (!username && !password && !firstname && !lastname && !sec_id) {
-      return res.status(400).json({ message: 'No fields to update' });
+    if (!AdvisorInExists) {
+      return res.status(404).json({ message: 'Advisor not found' });
     }
 
     const advisor = await prisma.advisor.update({
@@ -89,14 +114,9 @@ exports.updateAdvisor = async (req, res) => {
       },
     });
 
-    res.status(200).json(advisor);
+    return res.status(200).json(advisor);
   } catch (error) {
-    console.error('Error updating advisor:', error); 
-    //P2025 เป็นรหัสข้อผิดพลาดเฉพาะของ Prisma ซึ่งหมายถึง "Record to update not found" หรือ "ไม่พบเรคคอร์ดที่ต้องการอัปเดต"
-    if (error.code === 'P2025') { 
-      return res.status(404).json({ message: 'Advisor not found' });
-    }
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -105,20 +125,23 @@ exports.deleteAdvisor = async (req, res) => {
     const { advisor_id } = req.params;
 
     if (isNaN(advisor_id)) {
-      return res.status(400).json({ message: 'Invalid advisor_id' });
+      return res.status(400).json({ message: 'ID is not number' });
+    }
+
+    const AdvisorInExists = await prisma.advisor.findUnique({
+      where: { advisor_id: Number(advisor_id) },
+    });
+
+    if (!AdvisorInExists) {
+      return res.status(404).json({ message: 'Advisor not found' });
     }
 
     const advisor = await prisma.advisor.delete({
       where: { advisor_id: Number(advisor_id) },
     });
 
-    res.status(200).json(advisor);
+    return res.status(200).json(advisor);
   } catch (error) {
-    console.error('Error deleting advisor:', error);
-    //P2025 เป็นรหัสข้อผิดพลาดเฉพาะของ Prisma ซึ่งหมายถึง "Record to update not found" หรือ "ไม่พบเรคคอร์ดที่ต้องการอัปเดต"
-    if (error.code === 'P2025') { 
-      return res.status(404).json({ message: 'Advisor not found' });
-    }
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };

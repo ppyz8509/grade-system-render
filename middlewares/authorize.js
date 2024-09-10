@@ -28,9 +28,17 @@ const isCourse_in = (req, res, next) => {
   next();
 };
 
+const isAdvisor = (req, res, next) => {
+  if (req.user.role !== 'advisor') {
+    return res.status(403).json({ message: 'Access forbidden: advisor only' });
+  }
+  next();
+};
+
 module.exports = { 
   authenticateToken, 
   isAdmin,
-  isCourse_in 
+  isCourse_in,
+  isAdvisor
 
 };

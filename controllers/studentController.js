@@ -1,10 +1,40 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const jwt = require('jsonwebtoken');
+
+// Helper function to extract user information from JWT token
+const getUserFromToken = (token) => {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    return decoded;
+  } catch (err) {
+    return null;
+  }
+  
+};
 
 // Create a Student
 exports.createStudent = async (req, res) => {
   try {
     const { student_id, username, password, firstname, lastname, phone, email, sec_id } = req.body;
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!student_id || !username || !password || !firstname || !lastname || !sec_id) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    const existingstudent = await prisma.student.findUnique({ where: { student_id , username } });
+    if (existingstudent) {
+      return res.status(409).json({ message: 'Username already exists' });
+    }
+
+    const user = getUserFromToken(token);
+    console.log(user);
+
+    if (!user || !user.academic) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+
     const student = await prisma.student.create({
       data: {
         student_id,
@@ -15,11 +45,12 @@ exports.createStudent = async (req, res) => {
         phone,
         email,
         sec_id,
+        academic_id: user.academic.academic_id,
       },
     });
-    res.status(201).json(student);
+    return res.status(201).json(student);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -27,9 +58,12 @@ exports.createStudent = async (req, res) => {
 exports.getStudents = async (req, res) => {
   try {
     const students = await prisma.student.findMany();
-    res.status(200).json(students);
+    if (students.length === 0) {
+      return res.status(404).json({ message: 'students have no' });
+    }
+    return res.status(200).json(students);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -37,16 +71,20 @@ exports.getStudents = async (req, res) => {
 exports.getStudentById = async (req, res) => {
   try {
     const { student_id } = req.params;
-    const student = await prisma.student.findUnique({
-      where: { student_id: Number(student_id) },
-    });
-    if (student) {
-      res.status(200).json(student);
-    } else {
-      res.status(404).json({ message: 'Student not found' });
+
+    if (isNaN(student_id)) {
+      return res.status(400).json({ message: 'ID is not number' });
     }
+    const student = await prisma.student.findUnique({
+      where: { student_id: String(student_id) },
+    });
+
+    if (!student) {
+      return res.status(404).json({ message: 'student not found' });
+    } 
+    return res.status(200).json(student);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 

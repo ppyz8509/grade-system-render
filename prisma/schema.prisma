@@ -35,6 +35,7 @@ model academic_disciplines {
   course_in   course_in[]
   studnet     student[]
   studentplan studentplan[]
+  section     section[]
 }
 
 model admin {
@@ -156,9 +157,12 @@ model register {
 model section {
   sec_id   Int       @id @default(autoincrement())
   sec_name String    @db.VarChar(255)
-  major_id String    @db.VarChar(50)
+
   advisor  advisor[]
   student  student[]
+
+  academic_id Int
+  academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
 }
 
 model student {

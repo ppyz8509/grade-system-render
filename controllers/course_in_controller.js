@@ -1,6 +1,6 @@
-const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const jwt = require('jsonwebtoken');
 
 // Helper function to extract user information from JWT token
 const getUserFromToken = (token) => {
@@ -58,7 +58,7 @@ exports.getCourseIns = async (req, res) => {
     if (courseIns.length === 0) {
       return res.status(404).json({ message: 'Admin have no' });
     }
-    res.status(200).json(courseIns);
+    return res.status(200).json(courseIns);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -79,7 +79,7 @@ exports.getCourseInById = async (req, res) => {
       return res.status(404).json({ message: 'Course Instructor not found' });
     } 
    
-    res.status(200).json(courseIn);
+    return res.status(200).json(courseIn);
 
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -142,7 +142,8 @@ exports.deleteCourseIn = async (req, res) => {
       where: { courseinstructor_id: Number(courseinstructor_id) },
     });
 
-    res.status(200).json(courseIn);
+    return res.status(200).json(courseIn);
+    
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
