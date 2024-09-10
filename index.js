@@ -11,6 +11,7 @@ const teacherRouter = require('./routers/teacherRouter');
 const registerRouter = require('./routers/registerRouter');
 const studentplanRouter = require('./routers/studentplanRouter');
 const advisor = require('./routers/advisorRouter');
+const section = require('./routers/sectionRouter')
 
 
 
@@ -39,6 +40,7 @@ app.use('/api', teacherRouter);
 app.use('/api', registerRouter);
 app.use('/api', studentplanRouter);
 app.use('/api', advisor);
+app.use('/api', section);
 
 app.listen(3000, () => {
     console.log("Server running on port 3000");
