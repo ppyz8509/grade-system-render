@@ -130,7 +130,6 @@ model major {
   status       Status         @default(ACTIVE)
   category     category[]
   major_course major_course[]
-  studentplan  studentplan[]
 
   academic_id Int
   academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
@@ -199,12 +198,10 @@ model student {
 
 model studentplan {
   studentplan_id Int        @id @default(autoincrement())
-  major_id       Int
   year           String     @db.VarChar(50)
   semester       Int
   course_id      String
   register       register[]
-  major          major      @relation(fields: [major_id], references: [major_id])
   course         course     @relation(fields: [course_id], references: [course_id])
 
   academic_id Int

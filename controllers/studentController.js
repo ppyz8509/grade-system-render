@@ -93,8 +93,32 @@ exports.updateStudent = async (req, res) => {
   try {
     const { student_id } = req.params;
     const { username, password, firstname, lastname, phone, email, sec_id } = req.body;
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+
+
+    if (isNaN(student_id)) {
+      return res.status(400).json({ message: 'ID is not number' });
+    }
+
+    const user = getUserFromToken(token);
+    if (!user || !user.academic) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    const studentExists = await prisma.student.findUnique({
+      where: { student_id: String(student_id) },
+    });
+
+    if (!studentExists) {
+      return res.status(404).json({ message: 'student not found' });
+    }
+
+    if (studentExists.academic_id !== user.academic.academic_id) {
+      return res.status(403).json({ message: 'Permission denied: Academic ID mismatch' });
+    }
+
     const student = await prisma.student.update({
-      where: { student_id: Number(student_id) },
+      where: { student_id: String(student_id) },
       data: {
         username,
         password,
@@ -115,8 +139,30 @@ exports.updateStudent = async (req, res) => {
 exports.deleteStudent = async (req, res) => {
   try {
     const { student_id } = req.params;
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (isNaN(student_id)) {
+      return res.status(400).json({ message: 'ID is not number' });
+    }
+    const user = getUserFromToken(token);
+    if (!user || !user.academic) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    const studentExists = await prisma.student.findUnique({
+      where: { student_id: String(student_id) },
+    });
+
+    if (!studentExists) {
+      return res.status(404).json({ message: 'student not found' });
+    }
+
+    if (studentExists.academic_id !== user.academic.academic_id) {
+      return res.status(403).json({ message: 'Permission denied: Academic ID mismatch' });
+    }
+
+    
     const student = await prisma.student.delete({
-      where: { student_id: Number(student_id) },
+      where: { student_id: String(student_id) },
     });
     res.status(200).json(student);
   } catch (error) {

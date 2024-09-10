@@ -1,17 +1,37 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const jwt = require('jsonwebtoken');
+
+// Helper function to extract user information from JWT token
+const getUserFromToken = (token) => {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    return decoded;
+  } catch (err) {
+    return null;
+  }
+  
+};
 
 exports.createStudentPlan = async (req, res) => {
   try {
-    const { major_id, year, semester, course_id } = req.body;
+    const { year, semester, course_id } = req.body;
+    const token = req.header('Authorization')?.replace('Bearer ', '');
 
-    if (!major_id || !year || !semester || !course_id) {
+    if (!year || !semester || !course_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
+    const existingCourse = await prisma.course_in.findFirst({
+      where: {year,semester,course_id,},
+    });
+    if (existingCourse) {
+      return res.status(409).json({ message: 'Course already exists' });
+    }
+
+
     const student_plan = await prisma.studentplan.create({
       data: {
-        major_id,
         year,
         semester,
         course_id,
