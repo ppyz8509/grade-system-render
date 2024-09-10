@@ -14,10 +14,10 @@ const authorize = (roles = []) => {
     const token = authHeader.split(' ')[1];
 
     try {
-      // ตรวจสอบ ถอดรหัสJWT token
+      // ตรวจสอบ ถอดรหัสJWT
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // ตรวจสอบสิทธิ์การเข้าถึง (หากมีการกำหนดบทบาทที่ต้องการ)
+      // ตรวจสอบสิทธิ์การเข้าถึง 
       if (roles.length && !roles.includes(decoded.role)) {
         // หากบทบาทของผู้ใช้ไม่ตรงกับบทบาทที่อนุญาต
         return res.status(403).json({ message: 'Forbidden: You do not have access to this resource' });

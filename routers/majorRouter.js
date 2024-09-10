@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const majorController = require("../controllers/majorController"); 
-const authorize = require('../middlewares/authorize');
+const authorize = require('../middlewares/authorize');///authorize(['role']);
 
 //major
 router.post("/createMajor", majorController.createMajor);

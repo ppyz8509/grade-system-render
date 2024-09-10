@@ -9,11 +9,6 @@ const {
     deleteStudent,
 } = require ("../controllers/advisorController");
 
-
-const checkRole = require("../middlewares/checkRole");
-//, checkRole(['COURSE_INSTRUCTOR']) เช็คโรล เก็บไว้ใช้ตอนทำ login advice เสร้จsdf
-
-
 router.post("/createStudent",createStudent);
 router.get("/getAllStudents", getAllStudents);
 router.get("/getStudentById/:S_id", getStudentById);

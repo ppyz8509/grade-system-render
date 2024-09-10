@@ -17,7 +17,7 @@ exports.createMajor = async (req, res) => {
     });
 
     if (existingMajor) {
-      return res.status(409).json({ error: 'Major code already exists' }); // 409 Conflict สำหรับข้อมูลที่ซ้ำ
+      return res.status(409).json({ error: 'Major code already exists' });
     }
 
     // สร้าง major ใหม่
@@ -34,19 +34,24 @@ exports.createMajor = async (req, res) => {
 
     res.status(201).json(newMajor);
   } catch (error) {
-    // ตรวจสอบชนิดของ error
+    console.error('Error creating major:', error);
+
+    // ตรวจสอบข้อผิดพลาดที่เกี่ยวข้องกับการละเมิดข้อจำกัด unique constraint
     if (error.code === 'P2002') {
-      // P2002 คือ error ของ Prisma เมื่อมี unique constraint ที่ซ้ำ
       return res.status(409).json({ error: 'Major code already exists' });
     }
 
-    console.error('Error creating major:', error);
     res.status(500).json({ error: 'An unexpected error occurred while creating the major' });
   }
 };
 exports.getAllMajors = async (req, res) => {
   try {
     const majors = await prisma.major.findMany();
+
+    if (!majors || majors.length === 0) {
+      return res.status(404).json({ error: 'No majors found' });
+    }
+
     res.status(200).json(majors);
   } catch (error) {
     console.error('Error fetching all majors:', error);
@@ -56,6 +61,11 @@ exports.getAllMajors = async (req, res) => {
 exports.getMajorByCode = async (req, res) => {
   try {
     const { major_code } = req.params;
+
+    if (!major_code) {
+      return res.status(400).json({ error: 'Missing major_code' });
+    }
+
     const major = await prisma.major.findFirst({
       where: { major_code: major_code }
     });
@@ -75,8 +85,16 @@ exports.updateMajor = async (req, res) => {
     const { id } = req.params;
     const { major_code, majorNameTH, majorNameENG, majorYear, majorUnit, status } = req.body;
 
-    if (isNaN(parseInt(id, 10))) {
-      return res.status(400).json({ error: 'Invalid major_id format' });
+    if (!id || isNaN(parseInt(id, 10))) {
+      return res.status(400).json({ error: 'Invalid or missing major_id' });
+    }
+
+    const majorExists = await prisma.major.findUnique({
+      where: { major_id: parseInt(id, 10) }
+    });
+
+    if (!majorExists) {
+      return res.status(404).json({ error: 'Major not found' });
     }
 
     const updatedMajor = await prisma.major.update({
@@ -94,6 +112,12 @@ exports.updateMajor = async (req, res) => {
     res.status(200).json(updatedMajor);
   } catch (error) {
     console.error('Error updating major:', error);
+
+    // ตรวจสอบข้อผิดพลาดที่เกิดจากการละเมิด unique constraint
+    if (error.code === 'P2002') {
+      return res.status(409).json({ error: 'Major code already exists' });
+    }
+
     res.status(500).json({ error: 'An error occurred while updating the major' });
   }
 };
@@ -101,9 +125,8 @@ exports.deleteMajor = async (req, res) => {
   const { major_id } = req.params;
 
   try {
-    // ตรวจสอบว่า major_id ถูกส่งมาหรือไม่
-    if (!major_id) {
-      return res.status(400).json({ error: 'Missing major_id' });
+    if (!major_id || isNaN(parseInt(major_id, 10))) {
+      return res.status(400).json({ error: 'Invalid or missing major_id' });
     }
 
     // ตรวจสอบว่า Major มีอยู่จริงหรือไม่
@@ -120,6 +143,11 @@ exports.deleteMajor = async (req, res) => {
       where: { major_id: parseInt(major_id, 10) },
       select: { category_id: true }
     });
+
+    if (categories.length === 0) {
+      return res.status(404).json({ error: 'No categories found related to this major' });
+    }
+
     const categoryIds = categories.map(c => c.category_id);
 
     // ลบ course ที่เชื่อมต่อกับ category
@@ -127,18 +155,18 @@ exports.deleteMajor = async (req, res) => {
       where: { category_id: { in: categoryIds } },
       select: { course_id: true }
     });
+
     const courseIds = courses.map(c => c.course_id);
 
+    // ลบข้อมูลจากตารางต่าง ๆ
     await prisma.course.deleteMany({
       where: { course_id: { in: courseIds } },
     });
 
-    // ลบ group_major ที่เชื่อมต่อกับ category
     await prisma.group_major.deleteMany({
       where: { category_id: { in: categoryIds } },
     });
 
-    // ลบ category ที่เชื่อมต่อกับ major
     await prisma.category.deleteMany({
       where: { major_id: parseInt(major_id, 10) },
     });
@@ -148,7 +176,6 @@ exports.deleteMajor = async (req, res) => {
       where: { major_id: parseInt(major_id, 10) },
     });
 
-    // ส่งข้อความแสดงความสำเร็จ
     res.json({ message: 'Major and related courses successfully deleted' });
   } catch (error) {
     console.error('Error deleting Major:', error);
@@ -158,36 +185,38 @@ exports.deleteMajor = async (req, res) => {
 
 
 
-
-
-
-
 // Category
 exports.createCategory = async (req, res) => {
   try {
     const { category_name, category_unit, major_id } = req.body;
 
+    // ตรวจสอบว่ามีข้อมูลครบทุกช่องที่จำเป็นหรือไม่
+    if (!category_name || !category_unit || !major_id) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
     // ตรวจสอบว่า major_id มีอยู่หรือไม่
     const majorExists = await prisma.major.findUnique({
-      where: { major_id },
+      where: { major_id: parseInt(major_id) },  // ตรวจสอบให้แน่ใจว่า major_id เป็น integer
     });
 
     if (!majorExists) {
       return res.status(400).json({ error: 'Invalid major_id: No matching major found' });
     }
 
-
+    // สร้าง Category ใหม่
     const newCategory = await prisma.category.create({
       data: {
         category_name,
         category_unit,
-        major_id,
+        major_id: parseInt(major_id),
       },
     });
 
     res.status(201).json(newCategory);
   } catch (error) {
     if (error.code === 'P2002') {
+      // ข้อผิดพลาดจาก Prisma เมื่อมี unique constraint ที่ซ้ำ
       res.status(400).json({ error: 'Category with this ID already exists' });
     } else {
       console.error('Error creating category:', error);
@@ -207,9 +236,15 @@ exports.getAllCategories = async (req, res) => {
 exports.getCategoryById = async (req, res) => {
   try {
     const { id } = req.params;
+    const categoryId = parseInt(id);
+
+    // ตรวจสอบว่า category_id มีการส่งมาและถูกต้องหรือไม่
+    if (isNaN(categoryId)) {
+      return res.status(400).json({ error: 'Invalid category_id format' });
+    }
 
     const category = await prisma.category.findUnique({
-      where: { category_id: parseInt(id) },
+      where: { category_id: categoryId },
     });
 
     if (category) {
@@ -225,14 +260,25 @@ exports.getCategoryById = async (req, res) => {
 exports.updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
+    const categoryId = parseInt(id);
     const { category_name, category_unit, major_id } = req.body;
 
+    // ตรวจสอบว่า category_id มีการส่งมาและถูกต้องหรือไม่
+    if (isNaN(categoryId)) {
+      return res.status(400).json({ error: 'Invalid category_id format' });
+    }
+
+    // ตรวจสอบว่ามีข้อมูลครบทุกช่องที่จำเป็นหรือไม่
+    if (!category_name || !category_unit || !major_id) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
     const updatedCategory = await prisma.category.update({
-      where: { category_id: parseInt(id) },
+      where: { category_id: categoryId },
       data: {
         category_name,
         category_unit,
-        major_id,
+        major_id: parseInt(major_id),
       },
     });
 
@@ -247,7 +293,12 @@ exports.deleteCategory = async (req, res) => {
     const { id } = req.params;
     const categoryId = parseInt(id);
 
-    // Check if the Category exists
+    // ตรวจสอบว่า category_id มีการส่งมาและถูกต้องหรือไม่
+    if (isNaN(categoryId)) {
+      return res.status(400).json({ error: 'Invalid category_id format' });
+    }
+
+    // ตรวจสอบว่า Category มีอยู่จริงหรือไม่
     const category = await prisma.category.findUnique({
       where: { category_id: categoryId }
     });
@@ -256,7 +307,7 @@ exports.deleteCategory = async (req, res) => {
       return res.status(404).json({ error: 'Category not found' });
     }
 
-    // Delete Courses associated with the GroupMajor within the Category
+    // ลบ Course ที่เชื่อมต่อกับ GroupMajor ภายใน Category
     await prisma.course.deleteMany({
       where: {
         group_major: {
@@ -265,12 +316,12 @@ exports.deleteCategory = async (req, res) => {
       }
     });
 
-    // Delete GroupMajor associated with the Category
+    // ลบ GroupMajor ที่เชื่อมต่อกับ Category
     await prisma.group_major.deleteMany({
       where: { category_id: categoryId }
     });
 
-    // Delete the Category
+    // ลบ Category
     await prisma.category.delete({
       where: { category_id: categoryId }
     });
@@ -284,20 +335,26 @@ exports.deleteCategory = async (req, res) => {
 
 
 
-
 // Group Major
 exports.createGroupMajor = async (req, res) => {
   try {
     const { group_name, group_unit, category_id } = req.body;
 
-    const groupMajorExists = await prisma.category.findUnique({
+    // ตรวจสอบว่าข้อมูลที่จำเป็นถูกส่งเข้ามาครบหรือไม่
+    if (!group_name || !group_unit || !category_id) {
+      return res.status(400).json({ error: 'Missing required fields: group_name, group_unit, or category_id' });
+    }
+
+    // ตรวจสอบว่า category_id มีอยู่จริงหรือไม่
+    const categoryExists = await prisma.category.findUnique({
       where: { category_id },
     });
     
-    if(!groupMajorExists){
-      return res.status(400).json({ error: 'Invalid category_id: No matching major found' });
+    if (!categoryExists) {
+      return res.status(400).json({ error: 'Invalid category_id: No matching category found' });
     }
 
+    // สร้าง Group Major ใหม่
     const newGroupMajor = await prisma.group_major.create({
       data: {
         group_name,
@@ -313,12 +370,17 @@ exports.createGroupMajor = async (req, res) => {
     } else {
       console.error('Error creating group major:', error);
       res.status(500).json({ error: 'An error occurred while creating the group major' });
+    }
   }
-};
 };
 exports.getAllGroupMajors = async (req, res) => {
   try {
     const groupMajors = await prisma.group_major.findMany();
+
+    if (!groupMajors.length) {
+      return res.status(404).json({ error: 'No Group Majors found' });
+    }
+
     res.status(200).json(groupMajors);
   } catch (error) {
     console.error('Error fetching all group majors:', error);
@@ -329,15 +391,21 @@ exports.getGroupMajorById = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // ตรวจสอบว่า id ที่ส่งเข้ามาเป็นตัวเลขหรือไม่
+    const groupId = parseInt(id);
+    if (isNaN(groupId)) {
+      return res.status(400).json({ error: 'Invalid group ID' });
+    }
+
     const groupMajor = await prisma.group_major.findUnique({
-      where: { group_id: parseInt(id) },
+      where: { group_id: groupId },
     });
 
-    if (groupMajor) {
-      res.status(200).json(groupMajor);
-    } else {
-      res.status(404).json({ error: 'Group Major not found' });
+    if (!groupMajor) {
+      return res.status(404).json({ error: 'Group Major not found' });
     }
+
+    res.status(200).json(groupMajor);
   } catch (error) {
     console.error('Error fetching group major by ID:', error);
     res.status(500).json({ error: 'An error occurred while fetching the group major' });
@@ -348,8 +416,29 @@ exports.updateGroupMajor = async (req, res) => {
     const { id } = req.params;
     const { group_name, group_unit, category_id } = req.body;
 
+    // ตรวจสอบว่า id ที่ส่งเข้ามาเป็นตัวเลขหรือไม่
+    const groupId = parseInt(id);
+    if (isNaN(groupId)) {
+      return res.status(400).json({ error: 'Invalid group ID' });
+    }
+
+    // ตรวจสอบว่าข้อมูลที่ส่งเข้ามาครบถ้วนหรือไม่
+    if (!group_name || !group_unit || !category_id) {
+      return res.status(400).json({ error: 'Missing required fields: group_name, group_unit, or category_id' });
+    }
+
+    // ตรวจสอบว่า category_id มีอยู่จริงหรือไม่
+    const categoryExists = await prisma.category.findUnique({
+      where: { category_id },
+    });
+    
+    if (!categoryExists) {
+      return res.status(400).json({ error: 'Invalid category_id: No matching category found' });
+    }
+
+    // อัปเดต Group Major
     const updatedGroupMajor = await prisma.group_major.update({
-      where: { group_id: parseInt(id) },
+      where: { group_id: groupId },
       data: {
         group_name,
         group_unit,
@@ -368,29 +457,34 @@ exports.deleteGroupMajor = async (req, res) => {
     const { id } = req.params;
     const groupId = parseInt(id);
 
-    // Check if the GroupMajor exists
+    // ตรวจสอบว่า id ที่ส่งเข้ามาเป็นตัวเลขหรือไม่
+    if (isNaN(groupId)) {
+      return res.status(400).json({ error: 'Invalid group ID' });
+    }
+
+    // ตรวจสอบว่า GroupMajor ที่ต้องการลบมีอยู่จริงหรือไม่
     const groupMajor = await prisma.group_major.findUnique({
-      where: { group_id: groupId }
+      where: { group_id: groupId },
     });
 
     if (!groupMajor) {
-      return res.status(404).json({ error: 'GroupMajor not found' });
+      return res.status(404).json({ error: 'Group Major not found' });
     }
 
-    // Delete Courses associated with the GroupMajor
+    // ลบข้อมูล Courses ที่เชื่อมโยงกับ GroupMajor นี้
     await prisma.course.deleteMany({
-      where: { group_id: groupId }
+      where: { group_id: groupId },
     });
 
-    // Delete the GroupMajor
+    // ลบ GroupMajor
     await prisma.group_major.delete({
-      where: { group_id: groupId }
+      where: { group_id: groupId },
     });
 
-    res.json({ message: 'GroupMajor successfully deleted' });
+    res.json({ message: 'Group Major successfully deleted' });
   } catch (error) {
-    console.error('Error deleting GroupMajor:', error);
-    res.status(500).json({ error: 'An error occurred while deleting the GroupMajor' });
+    console.error('Error deleting Group Major:', error);
+    res.status(500).json({ error: 'An error occurred while deleting the Group Major' });
   }
 };
 
@@ -399,26 +493,11 @@ exports.deleteGroupMajor = async (req, res) => {
 // Course
 exports.createCourse = async (req, res) => {
   try {
-    const {
-      course_id,
-      courseNameTH,
-      courseNameENG,
-      courseUnit,
-      courseTheory,
-      coursePractice,
-      categoryResearch,
-      category_id,
-      group_id,
-      freesubject
-    } = req.body;
+    const { course_id, courseNameTH, courseNameENG, courseUnit, courseTheory, coursePractice, categoryResearch, category_id, group_id, freesubject } = req.body;
 
-    // ตรวจสอบว่ามีข้อมูลทุกช่องที่จำเป็นหรือไม่ โดยไม่เช็คค่าที่เป็น 0
-    if (
-      course_id === undefined || courseNameTH === undefined || 
-      courseNameENG === undefined || courseUnit === undefined || 
-      courseTheory === undefined || coursePractice === undefined
-    ) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    // ตรวจสอบว่ามีข้อมูลทุกช่องที่จำเป็นหรือไม่
+    if (!course_id || !courseNameTH || !courseNameENG || !courseUnit || !courseTheory || !coursePractice) {
+      return res.status(400).json({ error: 'Missing required fields. Please provide course_id, courseNameTH, courseNameENG, courseUnit, courseTheory, and coursePractice.' });
     }
 
     // ตรวจสอบว่า course_id มีอยู่แล้วหรือไม่
@@ -427,10 +506,9 @@ exports.createCourse = async (req, res) => {
     });
 
     if (existingCourse) {
-      return res.status(409).json({ error: 'Course with this ID already exists' });
+      return res.status(409).json({ error: 'Course with this ID already exists' }); // แจ้งว่ารหัส course ซ้ำ
     }
 
-    // สร้าง course ใหม่
     const newCourse = await prisma.course.create({
       data: {
         course_id,
@@ -442,15 +520,18 @@ exports.createCourse = async (req, res) => {
         categoryResearch,
         category_id: category_id || null,
         group_id: group_id || null,
-        freesubject: freesubject || false,
+        freesubject: freesubject || false, // เพิ่ม freesubject และตั้งค่า default เป็น false ถ้าไม่มีข้อมูล
       },
     });
 
     res.status(201).json(newCourse);
   } catch (error) {
+    // ตรวจสอบชนิดของ error
     if (error.code === 'P2002') {
+      // P2002 คือ error ของ Prisma เมื่อมี unique constraint ที่ซ้ำ
       return res.status(409).json({ error: 'Course with this ID already exists' });
     }
+
     console.error('Error creating course:', error);
     res.status(500).json({ error: 'An unexpected error occurred while creating the course' });
   }
@@ -458,6 +539,9 @@ exports.createCourse = async (req, res) => {
 exports.getAllCourses = async (req, res) => {
   try {
     const courses = await prisma.course.findMany();
+    if (courses.length === 0) {
+      return res.status(404).json({ error: 'No courses found' });
+    }
     res.status(200).json(courses);
   } catch (error) {
     console.error('Error fetching all courses:', error);
@@ -472,11 +556,11 @@ exports.getCourseById = async (req, res) => {
       where: { course_id: id }, // เนื่องจาก course_id เป็น String, ไม่ต้อง parseInt
     });
 
-    if (course) {
-      res.status(200).json(course);
-    } else {
-      res.status(404).json({ error: 'Course not found' });
+    if (!course) {
+      return res.status(404).json({ error: 'Course not found' });
     }
+
+    res.status(200).json(course);
   } catch (error) {
     console.error('Error fetching course by ID:', error);
     res.status(500).json({ error: 'An error occurred while fetching the course' });
@@ -486,6 +570,19 @@ exports.updateCourse = async (req, res) => {
   try {
     const { id } = req.params;
     const { courseNameTH, courseNameENG, courseUnit, courseTheory, coursePractice, categoryResearch, category_id, group_id } = req.body;
+
+    // ตรวจสอบว่ามีข้อมูลทุกช่องที่จำเป็นหรือไม่
+    if (!courseNameTH || !courseNameENG || !courseUnit || !courseTheory || !coursePractice) {
+      return res.status(400).json({ error: 'Missing required fields for update. Please provide courseNameTH, courseNameENG, courseUnit, courseTheory, and coursePractice.' });
+    }
+
+    const courseExists = await prisma.course.findUnique({
+      where: { course_id: id },
+    });
+
+    if (!courseExists) {
+      return res.status(404).json({ error: 'Course not found for update' });
+    }
 
     const updatedCourse = await prisma.course.update({
       where: { course_id: id }, // เนื่องจาก course_id เป็น String, ไม่ต้อง parseInt
@@ -511,6 +608,14 @@ exports.deleteCourse = async (req, res) => {
   try {
     const { id } = req.params;
 
+    const course = await prisma.course.findUnique({
+      where: { course_id: id },
+    });
+
+    if (!course) {
+      return res.status(404).json({ error: 'Course not found for deletion' });
+    }
+
     await prisma.course.delete({
       where: { course_id: id }, // เนื่องจาก course_id เป็น String, ไม่ต้อง parseInt
     });
@@ -521,6 +626,7 @@ exports.deleteCourse = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while deleting the course' });
   }
 };
+
 
 // Get courses by category_id
 exports.getCoursesByCategoryId = async (req, res) => {
