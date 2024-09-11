@@ -101,7 +101,7 @@ model course {
   category         category?      @relation(fields: [category_id], references: [category_id])
   group_major      group_major?   @relation(fields: [group_id], references: [group_id])
   major_course     major_course[]
-  studentplan      studentplan[]
+  studentplan      Listcoursestudentplan[]
 }
 
 
@@ -159,11 +159,11 @@ model major_course {
 model register {
   register_id    Int         @id @default(autoincrement())
   student_id     String
-
+  studentplan_id Int
   grade          Grade?
   teacher_name   String?     @db.VarChar(255)
 
-  studentplan_id Int
+  
   student        student     @relation(fields: [student_id], references: [student_id])
   studentplan    studentplan @relation(fields: [studentplan_id], references: [studentplan_id])
 }
@@ -214,17 +214,23 @@ model student {
 
 model studentplan {
   studentplan_id Int        @id @default(autoincrement())
-
   year           String     @db.VarChar(50)
   semester       Int
-  course_id      String
   register       register[]
-
-  course         course     @relation(fields: [course_id], references: [course_id])
-
   academic_id Int
   academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
 
+  Listcoursestudentplan      Listcoursestudentplan[]
+
+}
+
+model Listcoursestudentplan {
+  Listcoursestudentplan_id Int        @id @default(autoincrement())
+  course_id      String
+  course         course     @relation(fields: [course_id], references: [course_id])
+
+  studentplan_id      Int
+  studentplan         studentplan     @relation(fields: [studentplan_id], references: [studentplan_id])
 }
 
 model teacher {

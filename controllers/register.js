@@ -1,60 +1,52 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const jwt = require('jsonwebtoken');
+
+// Helper function to extract user information from JWT token
+const getUserFromToken = (token) => {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    return decoded;
+  } catch (err) {
+    return null;
+  }
+  
+};
 
 exports.createRegister = async (req, res) => {
   try {
-    const { student_id } = req.params;
     const { grade, teacher_name } = req.body;
+    const token = req.header('Authorization')?.replace('Bearer ', '');
 
-    // หา student เพื่อเอา sec_id
-    const student = await prisma.student.findUnique({
-      where: { student_id },
-    });
-
-    if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+    const user = getUserFromToken(token);
+    console.log(user);
+    
+    if (!user || !user.academic) {
+      return res.status(403).json({ message: 'Unauthorized' });
     }
 
-    const { sec_id } = student; //destructuring assignment samesame const sec_id = student.sec_id;
+    const academic_id = user.academic.academic_id;
+    console.log("academic_id", academic_id);
 
-    // หา studentplan ที่มี sec_id ตรงกัน
+    // หา studentplan ที่มี academic_id ตรงกับที่ได้จาก token
     const studentplans = await prisma.studentplan.findMany({
-      where: { sec_id },
+      where: { academic_id: academic_id },
     });
 
-    if (studentplans.length === 0) {
-      return res.status(404).json({ message: 'No StudentPlans found for the given sec_id' });
+    if (!studentplans.length) {
+      return res.status(404).json({ message: 'No student plans found for this academic ID' });
     }
 
-    // หา register ที่มีอยู่แล้วโดยใช้ student_id และ studentplan_id
-    const existingRegisters = await prisma.register.findMany({
-      where: {
-        student_id,
-        studentplan_id: {
-          in: studentplans.map(plan => plan.studentplan_id), //ใช้เพื่อค้นหาหรือกรองข้อมูลที่ตรงกับค่าหนึ่งในชุดของค่าที่กำหนด   in: [1, 2, 3],
-        },
-      },
-    });
 
-    // สร้างชุดของ studentplan_id ที่มีอยู่แล้ว
-    const existingStudentplanIds = new Set(existingRegisters.map(registed => registed.studentplan_id));
-
-    // กรอง studentplan ที่ยังไม่ถูกสร้าง
-    const newStudentplans = studentplans.filter(plan => !existingStudentplanIds.has(plan.studentplan_id));
-
-    if (newStudentplans.length === 0) {
-      return res.status(200).json({ message: 'All studentplans have already been registered' });
-    }
-
-    // Loop ผ่าน studentplan ที่ใหม่และสร้าง register สำหรับแต่ละ plan
+    // Loop ผ่าน studentplan ใหม่และสร้าง register สำหรับแต่ละ plan
     const registers = await Promise.all(
       newStudentplans.map(async (plan) => {
         return prisma.register.create({
           data: {
-            student_id,
+            student_id: user.student_id, // ต้องเพิ่ม student_id จาก token
             studentplan_id: plan.studentplan_id,
-            grade: grade || null, // สามารถใส่ค่า default หรือ null
-            teacher_name: teacher_name || null, // สามารถใส่ค่า default หรือ null
+            grade: grade || null,
+            teacher_name: teacher_name || null,
           },
         });
       })

@@ -10,15 +10,15 @@ const getUserFromToken = (token) => {
   } catch (err) {
     return null;
   }
-  
+
 };
 
 exports.createStudentPlan = async (req, res) => {
   try {
-    const { year, semester, course_id,academic_id } = req.body;
+    const { year, semester } = req.body;
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
-    if (!year || !semester || !course_id) {
+    if (!year || !semester) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
@@ -29,19 +29,16 @@ exports.createStudentPlan = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
-    // ค้นหาข้อมูลที่มี year, semester, และ course_id ตรงกัน
     const existingCourse = await prisma.studentplan.findFirst({
       where: {
         year: year,
         semester: semester,
-        course_id: course_id,
         academic_id: user.academic.academic_id,
       },
     });
-    console.log("existingCourse", existingCourse);
 
     if (existingCourse) {
-      return res.status(400).json({ message: 'Student plan already exists in a different academic' });
+      return res.status(400).json({ message: 'Student plan already exists ' });
     }
     // // ถ้าพบข้อมูลที่ตรงกัน
     // if (existingCourse) {
@@ -56,22 +53,70 @@ exports.createStudentPlan = async (req, res) => {
       data: {
         year,
         semester,
-        course_id,
         academic_id: user.academic.academic_id,
       },
     });
-    res.status(201).json(student_plan);
+    return res.status(201).json(student_plan);
   } catch (error) {
-    console.error('Error creating student plan:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+exports.createListStudentplan = async (req, res) => {
+  try {
+    const {studentplan_id} = req.params;
+    const { course_id  } = req.body;
+
+    if (isNaN(studentplan_id)) {
+      return res.status(400).json({ message: 'Invalid studentplan_id ' });
+    }
+
+    const studentplan = await prisma.studentplan.findUnique({
+      where: { studentplan_id: Number(studentplan_id) },
+    });
+    console.log(studentplan);
+    
+    
+    if (!studentplan) {
+      return res.status(404).json({ message: 'section not found' });
+    } 
+    if (!course_id ) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    const existingListStudentplan = await prisma.listcoursestudentplan.findFirst({
+      where: {
+        course_id: course_id,
+        studentplan_id: Number(studentplan_id),
+      },
+    });
+    if (existingListStudentplan) {
+      return res.status(400).json({ message: 'listcoursestudentplan already exists' });
+    }
+
+    const liststudent_plan = await prisma.listcoursestudentplan.create({
+      data: {
+        course_id,
+        studentplan_id: Number(studentplan_id),
+      },
+    });
+    return res.status(201).json(liststudent_plan);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 };
 
 exports.getStudentPlans = async (req, res) => {
   try {
-    const studentplans = await prisma.studentplan.findMany();
+    const studentplans = await prisma.studentplan.findMany({
+      include: {
+        Listcoursestudentplan: {
+          select:{ course_id: true}
+        }
+      }
+    });
     if (studentplans.length === 0) {
-      return res.status(404).json({ message: 'Admin have no' });
+      return res.status(404).json({ message: 'studentplans have no' });
     }
     return res.status(200).json(studentplans);
   } catch (error) {
@@ -91,10 +136,18 @@ exports.getStudentplanByAcademic = async (req, res) => {
     }
 
     const studentplans = await prisma.studentplan.findMany({
-        where: {
-          academic_id: user.academic.academic_id
-        },
+      where: {
+        academic_id: user.academic.academic_id
+      },
+      include: {
+        Listcoursestudentplan: {
+          select:{ course_id: true}
+        }
+      }
     });
+    if (studentplans.length === 0) {
+      return res.status(404).json({ message: 'studentplans have no' });
+    }
 
     res.status(200).json(studentplans);
   } catch (error) {
@@ -106,7 +159,7 @@ exports.getStudentplanByAcademic = async (req, res) => {
 exports.updateStudentPlan = async (req, res) => {
   try {
     const { studentplan_id } = req.params;
-    const { year, semester, course_id } = req.body;
+    const { year, semester } = req.body;
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (isNaN(studentplan_id)) {
@@ -135,7 +188,6 @@ exports.updateStudentPlan = async (req, res) => {
       data: {
         year,
         semester,
-        course_id,
       },
     });
     return res.status(200).json(student_plan);
@@ -172,6 +224,9 @@ exports.deleteStudentPlan = async (req, res) => {
     if (studentplanExists.academic_id !== user.academic.academic_id) {
       return res.status(403).json({ message: 'Permission denied: Academic ID mismatch' });
     }
+    await prisma.listcoursestudentplan.deleteMany({
+      where: { studentplan_id: Number(studentplan_id) },
+    });
 
     const student_plan = await prisma.studentplan.delete({
       where: { studentplan_id: Number(studentplan_id) },
@@ -180,4 +235,32 @@ exports.deleteStudentPlan = async (req, res) => {
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
+};
+
+exports.deleteListStudentplan = async (req,res) => {
+  try {
+  const {Listcoursestudentplan_id} = req.params;
+  if (!Listcoursestudentplan_id) {
+    return res.status(400).json({ message: 'Missing studentplan_id' });
+  }
+
+  if (isNaN(Listcoursestudentplan_id)) {
+    return res.status(400).json({ message: 'ID is not number' });
+  }
+
+  const ListstudentplanExists = await prisma.listcoursestudentplan.findUnique({
+    where: { Listcoursestudentplan_id: Number(Listcoursestudentplan_id) },
+  });
+
+  if (!ListstudentplanExists) {
+    return res.status(404).json({ message: 'listcoursestudentplan not found' });
+  }
+
+  const listcoursestudentplanDelete = await prisma.listcoursestudentplan.delete({
+    where: { Listcoursestudentplan_id: Number(Listcoursestudentplan_id) },
+  });
+  return res.status(200).json(listcoursestudentplanDelete);
+} catch (error) {
+  return res.status(500).json({ error: error.message });
+}
 };

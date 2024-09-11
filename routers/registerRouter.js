@@ -8,7 +8,7 @@ const {
     deleteRegister,
 } = require ("../controllers/register");
 
-router.post("/createRegister/:student_id",createRegister)
+router.post("/createRegister",createRegister)
 router.get("/getRegisters/:student_id",getRegisters);
 router.get("/getRegisterById/:register_id",getRegisterById);
 router.put("/updateRegister/:register_id",updateRegister);
