@@ -15,48 +15,68 @@ const getUserFromToken = (token) => {
 
 exports.createRegister = async (req, res) => {
   try {
-    const { grade, teacher_name } = req.body;
     const token = req.header('Authorization')?.replace('Bearer ', '');
-
-    const user = getUserFromToken(token);
-    console.log(user);
     
-    if (!user || !user.academic) {
+    const user = getUserFromToken(token);
+    if (!user || !user.academic || !user.id) {
+      console.log("user",user);
+      
       return res.status(403).json({ message: 'Unauthorized' });
     }
-
+    
     const academic_id = user.academic.academic_id;
+    const student_id = user.id;
+    
     console.log("academic_id", academic_id);
-
+    console.log("student_id", student_id);
+    
     // หา studentplan ที่มี academic_id ตรงกับที่ได้จาก token
     const studentplans = await prisma.studentplan.findMany({
       where: { academic_id: academic_id },
     });
-
+    
     if (!studentplans.length) {
       return res.status(404).json({ message: 'No student plans found for this academic ID' });
     }
-
-
-    // Loop ผ่าน studentplan ใหม่และสร้าง register สำหรับแต่ละ plan
+    
+    // หา register ที่มีอยู่แล้วโดยใช้ student_id และ studentplan_id
+    const existingRegisters = await prisma.register.findMany({
+      where: {
+        student_id: student_id,
+        studentplan_id: {
+          in: studentplans.map(plan => plan.studentplan_id),
+        },
+      },
+    });
+    
+    // สร้างชุดของ studentplan_id ที่มีอยู่แล้ว
+    const existingStudentplanIds = new Set(existingRegisters.map(reg => reg.studentplan_id));
+    
+    // กรอง studentplan ที่ยังไม่ถูกสร้าง
+    const newStudentplans = studentplans.filter(plan => !existingStudentplanIds.has(plan.studentplan_id));
+    
+    if (newStudentplans.length === 0) {
+      return res.status(200).json({ message: 'All studentplans have already been registered' });
+    }
+    
+    // Loop ผ่าน studentplan ที่ใหม่และสร้าง register สำหรับแต่ละ plan
     const registers = await Promise.all(
       newStudentplans.map(async (plan) => {
         return prisma.register.create({
           data: {
-            student_id: user.student_id, // ต้องเพิ่ม student_id จาก token
+            student_id: student_id,
             studentplan_id: plan.studentplan_id,
-            grade: grade || null,
-            teacher_name: teacher_name || null,
           },
         });
       })
     );
-
+    
     res.status(201).json(registers);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 // Read all Registers
 exports.getRegisters = async (req, res) => {
@@ -75,37 +95,17 @@ exports.getRegisters = async (req, res) => {
       include: {
         studentplan: {
           include: {
-            course: true, // Include course information in the studentplan
+            Listcoursestudentplan: {
+              select: {course_id:true}
+            }
           },
         },
       },
     });
 
-    // Group registers by semester and year
-    const groupedRegisters = registers.reduce((acc, register) => {
-      const { semester, year, course } = register.studentplan;
-      const semesterKey = `Semester ${semester}, Year ${year}`;
-
-      if (!acc[semesterKey]) {
-        acc[semesterKey] = [];
-      }
-
-      acc[semesterKey].push({        
-        register_id: register.register_id,
-        course_id: course.course_id,
-        courseNameTH: course.courseNameTH,
-        courseNameENG: course.courseNameENG,
-        grade: register.grade,
-        teacher_name: register.teacher_name,
-
-      });
-
-      return acc;
-    }, {});
-
-    res.status(200).json(groupedRegisters);
+    return res.status(200).json(registers);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 

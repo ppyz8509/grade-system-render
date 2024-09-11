@@ -66,9 +66,16 @@ exports.createListStudentplan = async (req, res) => {
   try {
     const {studentplan_id} = req.params;
     const { course_id  } = req.body;
+    const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (isNaN(studentplan_id)) {
       return res.status(400).json({ message: 'Invalid studentplan_id ' });
+    }
+    const user = getUserFromToken(token);
+    console.log(user);
+
+    if (!user || !user.academic) {
+      return res.status(403).json({ message: 'Unauthorized' });
     }
 
     const studentplan = await prisma.studentplan.findUnique({
@@ -78,26 +85,33 @@ exports.createListStudentplan = async (req, res) => {
     
     
     if (!studentplan) {
-      return res.status(404).json({ message: 'section not found' });
+      return res.status(404).json({ message: 'studentplan not found' });
     } 
     if (!course_id ) {
       return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    if (studentplan.academic_id !== user.academic.academic_id) {
+      return res.status(403).json({ message: 'Academic ID mismatch' });
     }
 
     const existingListStudentplan = await prisma.listcoursestudentplan.findFirst({
       where: {
         course_id: course_id,
         studentplan_id: Number(studentplan_id),
+        academic_id: user.academic.academic_id,
       },
     });
     if (existingListStudentplan) {
       return res.status(400).json({ message: 'listcoursestudentplan already exists' });
     }
 
+ 
     const liststudent_plan = await prisma.listcoursestudentplan.create({
       data: {
         course_id,
         studentplan_id: Number(studentplan_id),
+        academic_id: user.academic.academic_id,
       },
     });
     return res.status(201).json(liststudent_plan);
@@ -111,7 +125,13 @@ exports.getStudentPlans = async (req, res) => {
     const studentplans = await prisma.studentplan.findMany({
       include: {
         Listcoursestudentplan: {
-          select:{ course_id: true}
+          include: {
+            course: {
+              select: {
+                courseNameTH: true
+              }
+            }
+          }
         }
       }
     });
@@ -227,6 +247,11 @@ exports.deleteStudentPlan = async (req, res) => {
     await prisma.listcoursestudentplan.deleteMany({
       where: { studentplan_id: Number(studentplan_id) },
     });
+
+    await prisma.register.deleteMany({
+      where: { studentplan_id: Number(studentplan_id) },
+    });
+
 
     const student_plan = await prisma.studentplan.delete({
       where: { studentplan_id: Number(studentplan_id) },

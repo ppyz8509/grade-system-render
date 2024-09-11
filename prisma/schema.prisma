@@ -36,6 +36,7 @@ model academic_disciplines {
   course_in   course_in[]
   studnet     student[]
   studentplan studentplan[]
+  Listcoursestudentplan Listcoursestudentplan[]
   section     section[]
 }
 
@@ -160,10 +161,7 @@ model register {
   register_id    Int         @id @default(autoincrement())
   student_id     String
   studentplan_id Int
-  grade          Grade?
-  teacher_name   String?     @db.VarChar(255)
 
-  
   student        student     @relation(fields: [student_id], references: [student_id])
   studentplan    studentplan @relation(fields: [studentplan_id], references: [studentplan_id])
 }
@@ -228,6 +226,11 @@ model Listcoursestudentplan {
   Listcoursestudentplan_id Int        @id @default(autoincrement())
   course_id      String
   course         course     @relation(fields: [course_id], references: [course_id])
+  grade          Grade?
+  teacher_name   String?     @db.VarChar(255)
+
+  academic_id Int
+  academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
 
   studentplan_id      Int
   studentplan         studentplan     @relation(fields: [studentplan_id], references: [studentplan_id])
