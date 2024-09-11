@@ -11,6 +11,7 @@ const studentRouter = require('./routers/studentRouter');
 const teacherRouter = require('./routers/teacherRouter');
 const registerRouter = require('./routers/registerRouter');
 const studentplanRouter = require('./routers/studentplanRouter');
+const superadminRouter = require('./routers/superadminRouter');
 const advisor = require('./routers/advisorRouter');
 const section = require('./routers/sectionRouter')
 
@@ -35,6 +36,7 @@ app.use("/api", authRouter);
 app.use("/api", majorRouter);
 app.use("/api", course_in_Router);
 app.use("/api", adminRouter);
+app.use("/api", superadminRouter);
 app.use('/api', studentRouter);
 app.use('/api', teacherRouter);
 app.use('/api', registerRouter);

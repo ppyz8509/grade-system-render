@@ -7,7 +7,7 @@ require('dotenv').config();
 
 // กำหนดข้อมูลของแต่ละตารางที่ใช้ในการตรวจสอบการเข้าสู่ระบบ
 const tables = [
-  { model: 'superadmin', idField: 'superadmin_id', passwordField: 'password', include: { academic: true } },
+  { model: 'superadmin', idField: 'superadmin_id', passwordField: 'password', },
   { model: 'admin', idField: 'admin_id', passwordField: 'password', include: { academic: true } },
   { model: 'course_in', idField: 'courseinstructor_id', passwordField: 'password', include: { academic: true } },
   { model: 'advisor', idField: 'advisor_id', passwordField: 'password', include: { academic: true } },

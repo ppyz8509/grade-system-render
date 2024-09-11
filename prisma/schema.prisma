@@ -32,7 +32,6 @@ model academic_disciplines {
 
   major       major[]
   admin       admin[]
-  superadmin  superadmin[]
   advisor     advisor[]
   course_in   course_in[]
   studnet     student[]
@@ -60,9 +59,6 @@ model superadmin {
   lastname  String  @db.VarChar(255)
   phone     String? @db.VarChar(10)
   email     String? @db.VarChar(255)
-
-  academic_id Int
-  academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
 }
 
 model advisor {
