@@ -145,7 +145,7 @@ exports.deleteMajor = async (req, res) => {
       return res.status(400).json({ error: 'Invalid or missing major_id' });
     }
 
-    // ตรวจสอบว่า Major มีอยู่จริงหรือไม่
+    // Check if the Major exists
     const major = await prisma.major.findUnique({
       where: { major_id: parseInt(major_id, 10) },
     });
@@ -154,19 +154,23 @@ exports.deleteMajor = async (req, res) => {
       return res.status(404).json({ error: 'Major not found' });
     }
 
-    // ลบข้อมูลที่เกี่ยวข้องใน group_major ก่อน
+    // Find related categories
     const categories = await prisma.category.findMany({
       where: { major_id: parseInt(major_id, 10) },
       select: { category_id: true }
     });
 
-    if (categories.length === 0) {
-      return res.status(404).json({ error: 'No categories found related to this major' });
-    }
-
     const categoryIds = categories.map(c => c.category_id);
 
-    // ลบ course ที่เชื่อมต่อกับ category
+    // If no categories are found, proceed to delete the major
+    if (categoryIds.length === 0) {
+      await prisma.major.delete({
+        where: { major_id: parseInt(major_id, 10) },
+      });
+      return res.json({ message: 'Major successfully deleted' });
+    }
+
+    // Find and delete courses related to the categories
     const courses = await prisma.course.findMany({
       where: { category_id: { in: categoryIds } },
       select: { course_id: true }
@@ -174,30 +178,27 @@ exports.deleteMajor = async (req, res) => {
 
     const courseIds = courses.map(c => c.course_id);
 
-    // ลบข้อมูลจากตารางต่าง ๆ
     await prisma.course.deleteMany({
       where: { course_id: { in: courseIds } },
     });
 
-    await prisma.group_major.deleteMany({
-      where: { category_id: { in: categoryIds } },
-    });
-
+    // Delete categories
     await prisma.category.deleteMany({
       where: { major_id: parseInt(major_id, 10) },
     });
 
-    // ลบ major
+    // Delete the major
     await prisma.major.delete({
       where: { major_id: parseInt(major_id, 10) },
     });
 
-    res.json({ message: 'Major and related courses successfully deleted' });
+    res.json({ message: 'Major and related data successfully deleted' });
   } catch (error) {
     console.error('Error deleting Major:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 
 
 
