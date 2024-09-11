@@ -7,6 +7,7 @@ require('dotenv').config();
 
 // กำหนดข้อมูลของแต่ละตารางที่ใช้ในการตรวจสอบการเข้าสู่ระบบ
 const tables = [
+  { model: 'superadmin', idField: 'superadmin_id', passwordField: 'password', include: { academic: true } },
   { model: 'admin', idField: 'admin_id', passwordField: 'password', include: { academic: true } },
   { model: 'course_in', idField: 'courseinstructor_id', passwordField: 'password', include: { academic: true } },
   { model: 'advisor', idField: 'advisor_id', passwordField: 'password', include: { academic: true } },
@@ -37,7 +38,8 @@ exports.login = async (req, res) => {
       if (user && user[table.passwordField] === password) {
         // กำหนดบทบาทของผู้ใช้ตามตารางที่พบ
         let role;
-        if (table.model === 'admin') role = 'admin';
+        if (table.model === 'superadmin') role = 'superadmin';
+        else if(table.model === 'admin') role = 'admin';
         else if (table.model === 'advisor') role = 'advisor';
         else if (table.model === 'course_in') role = 'course_in';
         else if (table.model === 'student') role = 'student';

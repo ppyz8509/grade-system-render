@@ -14,6 +14,14 @@ const authenticateToken = (req, res, next) => {
 };
 
 // Middleware to check if user is admin
+const isSuperAdmin = (req, res, next) => {
+  if (req.user.role !== 'superadmin') {
+    return res.status(403).json({ message: 'Access forbidden: Admins only' });
+  }
+  next();
+};
+
+// Middleware to check if user is admin
 const isAdmin = (req, res, next) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Access forbidden: Admins only' });
@@ -37,6 +45,7 @@ const isAdvisor = (req, res, next) => {
 
 module.exports = { 
   authenticateToken, 
+  isSuperAdmin,
   isAdmin,
   isCourse_in,
   isAdvisor

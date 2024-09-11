@@ -32,6 +32,7 @@ model academic_disciplines {
 
   major       major[]
   admin       admin[]
+  superadmin  superadmin[]
   advisor     advisor[]
   course_in   course_in[]
   studnet     student[]
@@ -41,6 +42,18 @@ model academic_disciplines {
 
 model admin {
   admin_id  Int     @id @default(autoincrement())
+  username  String  @unique @db.VarChar(255)
+  password  String  @db.VarChar(255)
+  firstname String  @db.VarChar(255)
+  lastname  String  @db.VarChar(255)
+  phone     String? @db.VarChar(10)
+  email     String? @db.VarChar(255)
+
+  academic_id Int
+  academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
+}
+model superadmin {
+  superadmin_id  Int     @id @default(autoincrement())
   username  String  @unique @db.VarChar(255)
   password  String  @db.VarChar(255)
   firstname String  @db.VarChar(255)
