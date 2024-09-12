@@ -25,29 +25,28 @@ enum FreeSubject {
   false
 }
 
-
 model academic_disciplines {
   academic_id   Int    @id @default(autoincrement())
   academic_name String
 
-  major       major[]
-  admin       admin[]
-  advisor     advisor[]
-  course_in   course_in[]
-  studnet     student[]
-  studentplan studentplan[]
+  major                 major[]
+  admin                 admin[]
+  advisor               advisor[]
+  course_in             course_in[]
+  studnet               student[]
+  studentplan           studentplan[]
   Listcoursestudentplan Listcoursestudentplan[]
-  section     section[]
+  section               section[]
 }
 
 model superadmin {
-  superadmin_id  Int     @id @default(autoincrement())
-  username  String  @unique @db.VarChar(255)
-  password  String  @db.VarChar(255)
-  firstname String  @db.VarChar(255)
-  lastname  String  @db.VarChar(255)
-  phone     String? @db.VarChar(10)
-  email     String? @db.VarChar(255)
+  superadmin_id Int     @id @default(autoincrement())
+  username      String  @unique @db.VarChar(255)
+  password      String  @db.VarChar(255)
+  firstname     String  @db.VarChar(255)
+  lastname      String  @db.VarChar(255)
+  phone         String? @db.VarChar(10)
+  email         String? @db.VarChar(255)
 }
 
 model admin {
@@ -89,22 +88,21 @@ model category {
 }
 
 model course {
-  course_id        String         @id
-  courseNameTH     String         @db.VarChar(255)
-  courseNameENG    String         @db.VarChar(255)
-  courseUnit       Int
-  courseTheory     Int?
-  coursePractice   Int?
-  categoryResearch Int?
-  category_id      Int
-  group_id         Int
-  freesubject      FreeSubject    @default(false)
-  category         category?      @relation(fields: [category_id], references: [category_id])
-  group_major      group_major?   @relation(fields: [group_id], references: [group_id])
-  major_course     major_course[]
-  studentplan      Listcoursestudentplan[]
+  course_id          String                  @id
+  courseNameTH       String                  @db.VarChar(255)
+  courseNameENG      String                  @db.VarChar(255)
+  courseUnit         Int
+  courseTheory       Int?
+  coursePractice     Int?
+  categoryResearch   Int?
+  category_id        Int
+  group_id           Int
+  freesubject        FreeSubject             @default(false)
+  category           category?               @relation(fields: [category_id], references: [category_id])
+  group_major        group_major?            @relation(fields: [group_id], references: [group_id])
+  studentplan        Listcoursestudentplan[]
+  listcourseregister listcourseregister[]
 }
-
 
 model course_in {
   courseinstructor_id Int     @id @default(autoincrement())
@@ -114,7 +112,6 @@ model course_in {
   lastname            String  @db.VarChar(255)
   phone               String? @db.VarChar(10)
   email               String? @db.VarChar(255)
-
 
   academic_id Int
   academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
@@ -129,50 +126,53 @@ model group_major {
   category    category @relation(fields: [category_id], references: [category_id])
 }
 
-
 enum Status {
   ACTIVE
   INACTIVE
 }
 
 model major {
-  major_id     Int            @id @default(autoincrement())
-  major_code   String         @db.VarChar(255)
-  majorNameTH  String         @db.VarChar(255)
-  majorNameENG String         @db.VarChar(255)
-  majorYear    String         @db.VarChar(50)
-  majorUnit    String         @db.VarChar(50)
-  status       Status         @default(ACTIVE)
+  major_id     Int                  @id @default(autoincrement())
+  major_code   String               @db.VarChar(255)
+  majorNameTH  String               @db.VarChar(255)
+  majorNameENG String               @db.VarChar(255)
+  majorYear    String               @db.VarChar(50)
+  majorUnit    String               @db.VarChar(50)
+  status       Status               @default(ACTIVE)
   category     category[]
-  major_course major_course[]
-  academic_id Int
-  academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
-}
-
-model major_course {
-  mc_id     Int    @id @default(autoincrement())
-  major_id  Int
-  course_id String
-  course    course @relation(fields: [course_id], references: [course_id])
-  major     major  @relation(fields: [major_id], references: [major_id])
+  academic_id  Int
+  academic     academic_disciplines @relation(fields: [academic_id], references: [academic_id])
 }
 
 model register {
-  register_id    Int         @id @default(autoincrement())
+  register_id    Int    @id @default(autoincrement())
   student_id     String
   studentplan_id Int
+  year           String @db.VarChar(50)
+  semester       Int
 
-  student        student     @relation(fields: [student_id], references: [student_id])
-  studentplan    studentplan @relation(fields: [studentplan_id], references: [studentplan_id])
+  student            student              @relation(fields: [student_id], references: [student_id])
+  studentplan        studentplan          @relation(fields: [studentplan_id], references: [studentplan_id])
+  listcourseregister listcourseregister[]
+}
+
+model listcourseregister {
+  listcourseregister_id Int     @id @default(autoincrement())
+  grade                 Grade?
+  teacher_name          String? @db.VarChar(255)
+  course_id             String
+  register_id           Int
+
+  course   course   @relation(fields: [course_id], references: [course_id])
+  register register @relation(fields: [register_id], references: [register_id])
 }
 
 model section {
+  sec_id   Int    @id @default(autoincrement())
+  sec_name String @db.VarChar(255)
 
-  sec_id   Int       @id @default(autoincrement())
-  sec_name String    @db.VarChar(255)
-
-  advisor  advisor[]
-  student  student[]
+  advisor advisor[]
+  student student[]
 
   academic_id Int
   academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
@@ -211,36 +211,33 @@ model student {
 }
 
 model studentplan {
-  studentplan_id Int        @id @default(autoincrement())
-  year           String     @db.VarChar(50)
+  studentplan_id Int                  @id @default(autoincrement())
+  year           String               @db.VarChar(50)
   semester       Int
   register       register[]
-  academic_id Int
-  academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
+  academic_id    Int
+  academic       academic_disciplines @relation(fields: [academic_id], references: [academic_id])
 
-  Listcoursestudentplan      Listcoursestudentplan[]
-
+  Listcoursestudentplan Listcoursestudentplan[]
 }
 
 model Listcoursestudentplan {
-  Listcoursestudentplan_id Int        @id @default(autoincrement())
-  course_id      String
-  course         course     @relation(fields: [course_id], references: [course_id])
-  grade          Grade?
-  teacher_name   String?     @db.VarChar(255)
+  Listcoursestudentplan_id Int    @id @default(autoincrement())
+  course_id                String
+  course                   course @relation(fields: [course_id], references: [course_id])
 
   academic_id Int
   academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
 
-  studentplan_id      Int
-  studentplan         studentplan     @relation(fields: [studentplan_id], references: [studentplan_id])
+  studentplan_id Int
+  studentplan    studentplan @relation(fields: [studentplan_id], references: [studentplan_id])
 }
 
 model teacher {
-  teacher_id Int    @id @default(autoincrement())
+  teacher_id Int @id @default(autoincrement())
 
-  titlename  String @db.VarChar(255)
+  titlename String @db.VarChar(255)
 
-  firstname  String @db.VarChar(255)
-  lastname   String @db.VarChar(255)
+  firstname String @db.VarChar(255)
+  lastname  String @db.VarChar(255)
 }

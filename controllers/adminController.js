@@ -9,13 +9,18 @@ exports.createAdmin = async (req, res) => {
     if (!username || !password || !firstname || !lastname || !academic_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
-    if (phone.length > 10) {
-      return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
-    }
+
     const existingAdmin = await prisma.admin.findUnique({ where: { username } });
     if (existingAdmin) {
       return res.status(409).json({ message: 'Username already exists' });
     }
+    if (phone ) {
+      if (phone.length > 10) {
+        return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
+      }
+    }
+
+
 
     const admin = await prisma.admin.create({
       data: {

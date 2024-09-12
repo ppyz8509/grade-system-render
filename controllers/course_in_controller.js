@@ -21,9 +21,12 @@ exports.createCourseIn = async (req, res) => {
     if (!username || !password || !firstname || !lastname) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
-    if (phone.length > 10) {
-      return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
+    if (phone ) {
+      if (phone.length > 10) {
+        return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
+      }
     }
+
     const existingCourseIn = await prisma.course_in.findUnique({ where: { username } });
     if (existingCourseIn) {
       return res.status(409).json({ message: 'Username already exists' });
@@ -97,9 +100,12 @@ exports.updateCourseIn = async (req, res) => {
     if (isNaN(courseinstructor_id)) {
       return res.status(400).json({ message: 'ID is not number' });
     }
-    if (phone.length > 10) {
-      return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
+    if (phone ) {
+      if (phone.length > 10) {
+        return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
+      }
     }
+
     const CourseInExists = await prisma.course_in.findUnique({
       where: { courseinstructor_id: Number(courseinstructor_id) },
     });

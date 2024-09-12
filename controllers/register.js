@@ -33,45 +33,45 @@ exports.createRegister = async (req, res) => {
     // หา studentplan ที่มี academic_id ตรงกับที่ได้จาก token
     const studentplans = await prisma.studentplan.findMany({
       where: { academic_id: academic_id },
+      include: { Listcoursestudentplan: true },
     });
+
+    console.log("studentplan",studentplans);
     
     if (!studentplans.length) {
       return res.status(404).json({ message: 'No student plans found for this academic ID' });
     }
-    
-    // หา register ที่มีอยู่แล้วโดยใช้ student_id และ studentplan_id
-    const existingRegisters = await prisma.register.findMany({
-      where: {
-        student_id: student_id,
-        studentplan_id: {
-          in: studentplans.map(plan => plan.studentplan_id),
-        },
-      },
-    });
-    
-    // สร้างชุดของ studentplan_id ที่มีอยู่แล้ว
-    const existingStudentplanIds = new Set(existingRegisters.map(reg => reg.studentplan_id));
-    
-    // กรอง studentplan ที่ยังไม่ถูกสร้าง
-    const newStudentplans = studentplans.filter(plan => !existingStudentplanIds.has(plan.studentplan_id));
-    
-    if (newStudentplans.length === 0) {
-      return res.status(200).json({ message: 'All studentplans have already been registered' });
-    }
-    
-    // Loop ผ่าน studentplan ที่ใหม่และสร้าง register สำหรับแต่ละ plan
-    const registers = await Promise.all(
-      newStudentplans.map(async (plan) => {
+
+    const createdRegisters = await Promise.all(studentplans.map(async (studentplans) => {
         return prisma.register.create({
           data: {
             student_id: student_id,
-            studentplan_id: plan.studentplan_id,
+            studentplan_id: studentplans.studentplan_id,
+            year: studentplans.year,
+            semester: studentplans.semester,
           },
         });
       })
     );
+
+    // Loop ผ่าน studentplan ที่ใหม่และสร้าง listcourseregister สำหรับแต่ละ course ใน Listcoursestudentplan
+    const listcourseregisterEntries = await Promise.all(
+      studentplans.flatMap(plan =>
+        plan.Listcoursestudentplan.map(async (Listcoursestudentplan) => {
+          return prisma.listcourseregister.create({
+            data: {
+              course_id: Listcoursestudentplan.course_id,
+              register_id: createdRegisters.find(register => register.studentplan_id === plan.studentplan_id).register_id,
+              // คุณสามารถเพิ่มฟิลด์อื่นๆ ที่จำเป็นที่นี่
+            },
+          });
+        })
+      )
+    );
+
     
-    res.status(201).json(registers);
+    
+    res.status(201).json(listcourseregisterEntries);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -92,15 +92,9 @@ exports.getRegisters = async (req, res) => {
     // Find registers for the given student_id
     const registers = await prisma.register.findMany({
       where: { student_id },
-      include: {
-        studentplan: {
-          include: {
-            Listcoursestudentplan: {
-              select: {course_id:true}
-            }
-          },
-        },
-      },
+        include:{
+          listcourseregister: true
+        }
     });
 
     return res.status(200).json(registers);
@@ -129,47 +123,61 @@ exports.getRegisterById = async (req, res) => {
 // Update a Register
 exports.updateRegister = async (req, res) => {
   try {
-    const { register_id } = req.params;
-    const { grade, teacher_name, student_id } = req.body;
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const { updates } = req.body; // ใช้ `updates` ซึ่งเป็น array ของข้อมูลที่ต้องการอัปเดต
 
-    // อัปเดตข้อมูล register
-    const updatedRegister = await prisma.register.update({
-      where: { register_id: Number(register_id) },
-      data: {
-        grade, // อัปเดต grade
-        teacher_name, // อัปเดต teacher_name
-      },
-    });
-
-    // ดึงข้อมูล studentplan ที่เกี่ยวข้องกับ register ที่อัปเดต
-    const studentplan = await prisma.studentplan.findUnique({
-      where: { studentplan_id: updatedRegister.studentplan_id },
-      include: { course: true }, // ดึงข้อมูล course ที่เกี่ยวข้อง
-    });
-
-    // ตรวจสอบว่าพบ studentplan หรือไม่
-    if (!studentplan) {
-      return res.status(404).json({ message: 'Studentplan not found' });
+    if (!Array.isArray(updates) || updates.length === 0) {
+      return res.status(400).json({ message: 'Invalid updates array' });
     }
 
+    const user = getUserFromToken(token);
+    if (!user || !user.academic || !user.id) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
 
+    const academic_id = user.academic.academic_id;
+    const student_id = user.id;
 
-    // รวมข้อมูล course ที่เกี่ยวข้อง
-    const courseInfo = {      
-      course_id: studentplan.course.course_id,
-      course_name: studentplan.course.courseNameTH || studentplan.course.courseNameENG,
-      student_id: updatedRegister.student_id,
-      grade: updatedRegister.grade,
-      teacher_name: updatedRegister.teacher_name,
+    // ตรวจสอบข้อมูลที่ต้องอัปเดต
+    const updatePromises = updates.map(async (update) => {
+      const { Listcoursestudentplan_id, grade, teacher_name } = update;
 
-    };
+      // ตรวจสอบการมีอยู่ของ Listcoursestudentplan
+      const listcoursestudentplan = await prisma.listcoursestudentplan.findUnique({
+        where: { Listcoursestudentplan_id: Number(Listcoursestudentplan_id) },
+      });
 
-    // ส่งผลลัพธ์ที่อัปเดตและข้อมูล course
-    res.status(200).json(courseInfo);
+      if (!listcoursestudentplan) {
+        return { Listcoursestudentplan_id, error: 'Listcoursestudentplan not found' };
+      }
+
+      // ตรวจสอบ academic_id
+      if (listcoursestudentplan.academic_id !== academic_id) {
+        return { Listcoursestudentplan_id, error: 'Academic ID mismatch' };
+      }
+
+      // อัปเดตข้อมูล
+      const updated = await prisma.listcoursestudentplan.update({
+        where: { Listcoursestudentplan_id: Number(Listcoursestudentplan_id) },
+        data: {
+          grade: grade || listcoursestudentplan.grade,
+          teacher_name: teacher_name || listcoursestudentplan.teacher_name,
+        },
+      });
+
+      return updated;
+    });
+
+    const results = await Promise.all(updatePromises);
+
+    // แสดงผลลัพธ์ที่ได้รับ
+    res.status(200).json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
+
 
 // Delete a Register
 exports.deleteRegister = async (req, res) => {

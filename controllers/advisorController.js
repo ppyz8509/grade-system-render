@@ -19,8 +19,10 @@ exports.createAdvisor = async (req, res) => {
     if (!username || !password || !firstname || !lastname || !sec_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
-    if (phone.length > 10) {
-      return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
+    if (phone ) {
+      if (phone.length > 10) {
+        return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
+      }
     }
     const existingAdvisor = await prisma.advisor.findUnique({ where: { username } });
     if (existingAdvisor) {
@@ -96,8 +98,10 @@ exports.updateAdvisor = async (req, res) => {
     if (isNaN(advisor_id)) {
       return res.status(400).json({ message: 'ID is not number' });
     }
-    if (phone.length > 10) {
-      return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
+    if (phone ) {
+      if (phone.length > 10) {
+        return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
+      }
     }
     const AdvisorInExists = await prisma.advisor.findUnique({
       where: { advisor_id: Number(advisor_id) },

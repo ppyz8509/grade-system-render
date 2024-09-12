@@ -21,9 +21,12 @@ exports.createStudent = async (req, res) => {
     if (!student_id || !username || !password || !firstname || !lastname || !sec_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
-    if (phone.length > 10) {
-      return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
+    if (phone ) {
+      if (phone.length > 10) {
+        return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
+      }
     }
+
     const existingstudent = await prisma.student.findUnique({ where: { student_id , username } });
     if (existingstudent) {
       return res.status(409).json({ message: 'Username already exists' });
@@ -101,9 +104,12 @@ exports.updateStudent = async (req, res) => {
     if (isNaN(student_id)) {
       return res.status(400).json({ message: 'ID is not number' });
     }
-    if (phone.length > 10) {
-      return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
+    if (phone ) {
+      if (phone.length > 10) {
+        return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
+      }
     }
+
     const user = getUserFromToken(token);
     if (!user || !user.academic) {
       console.log(user);
