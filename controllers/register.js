@@ -42,36 +42,69 @@ exports.createRegister = async (req, res) => {
       return res.status(404).json({ message: 'No student plans found for this academic ID' });
     }
 
-    const createdRegisters = await Promise.all(studentplans.map(async (studentplans) => {
+    // ตรวจสอบว่า register สำหรับ student_id, studentplan_id, year, semester มีอยู่แล้วหรือไม่
+    const createdRegisters = await Promise.all(
+      studentplans.map(async (plan) => {
+        const existingRegister = await prisma.register.findFirst({
+          where: {
+            student_id: student_id,
+            studentplan_id: plan.studentplan_id,
+            year: plan.year,
+            semester: plan.semester,
+          },
+        });
+
+        if (existingRegister) {
+          return existingRegister;
+        }
+
         return prisma.register.create({
           data: {
             student_id: student_id,
-            studentplan_id: studentplans.studentplan_id,
-            year: studentplans.year,
-            semester: studentplans.semester,
+            studentplan_id: plan.studentplan_id,
+            year: plan.year,
+            semester: plan.semester,
           },
         });
       })
     );
 
-    // Loop ผ่าน studentplan ที่ใหม่และสร้าง listcourseregister สำหรับแต่ละ course ใน Listcoursestudentplan
+    // Loop ผ่าน studentplan ที่มีและสร้าง listcourseregister สำหรับแต่ละ course ใน Listcoursestudentplan
     const listcourseregisterEntries = await Promise.all(
       studentplans.flatMap(plan =>
-        plan.Listcoursestudentplan.map(async (Listcoursestudentplan) => {
+        plan.Listcoursestudentplan.map(async (listCourse) => {
+          // หา register ที่ตรงกับ studentplan_id
+          const register = createdRegisters.find(r => r.studentplan_id === plan.studentplan_id);
+          if (!register) return null;
+
+          // ตรวจสอบว่ามี entry ใน listcourseregister อยู่แล้วหรือไม่
+          const existingEntry = await prisma.listcourseregister.findFirst({
+            where: {
+              course_id: listCourse.course_id,
+              register_id: register.register_id,
+            },
+          });
+
+          if (existingEntry) {
+            return null;  // ข้ามการสร้างถ้ามีอยู่แล้ว
+          }
+
+          // ถ้าไม่มีอยู่ใน listcourseregister ให้สร้างใหม่
           return prisma.listcourseregister.create({
             data: {
-              course_id: Listcoursestudentplan.course_id,
-              register_id: createdRegisters.find(register => register.studentplan_id === plan.studentplan_id).register_id,
+              course_id: listCourse.course_id,
+              register_id: register.register_id,
               // คุณสามารถเพิ่มฟิลด์อื่นๆ ที่จำเป็นที่นี่
             },
           });
         })
       )
     );
+    
+    
+    const filteredListcourseregisterEntries = listcourseregisterEntries.filter(entry => entry !== null);
 
-    
-    
-    res.status(201).json(listcourseregisterEntries);
+    res.status(201).json({ createdRegisters, listcourseregisterEntries: filteredListcourseregisterEntries });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -123,60 +156,47 @@ exports.getRegisterById = async (req, res) => {
 // Update a Register
 exports.updateRegister = async (req, res) => {
   try {
+    const { listcourseregister_id } = req.params;
+    const { grade,teacher_name } = req.body;
     const token = req.header('Authorization')?.replace('Bearer ', '');
-    const { updates } = req.body; // ใช้ `updates` ซึ่งเป็น array ของข้อมูลที่ต้องการอัปเดต
 
-    if (!Array.isArray(updates) || updates.length === 0) {
-      return res.status(400).json({ message: 'Invalid updates array' });
+    // Check for valid input
+    if (isNaN(listcourseregister_id)) {
+      return res.status(400).json({ message: 'Invalid section ID' });
+    }
+    if (!listcourseregister_id) {
+      return res.status(400).json({ message: 'listcourseregister_id is required' });
     }
 
+    // Get user from token
     const user = getUserFromToken(token);
-    if (!user || !user.academic || !user.id) {
+    if (!user || !user.academic) {
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
-    const academic_id = user.academic.academic_id;
-    const student_id = user.id;
+    // Find the section by sec_id
+    const existslistcourseregister = await prisma.listcourseregister.findUnique({
+      where: { listcourseregister_id: Number(listcourseregister_id) },
+    });
+    
+    if (!existslistcourseregister) {
+      return res.status(404).json({ message: 'Section not found' });
+    }
 
-    // ตรวจสอบข้อมูลที่ต้องอัปเดต
-    const updatePromises = updates.map(async (update) => {
-      const { Listcoursestudentplan_id, grade, teacher_name } = update;
-
-      // ตรวจสอบการมีอยู่ของ Listcoursestudentplan
-      const listcoursestudentplan = await prisma.listcoursestudentplan.findUnique({
-        where: { Listcoursestudentplan_id: Number(Listcoursestudentplan_id) },
-      });
-
-      if (!listcoursestudentplan) {
-        return { Listcoursestudentplan_id, error: 'Listcoursestudentplan not found' };
-      }
-
-      // ตรวจสอบ academic_id
-      if (listcoursestudentplan.academic_id !== academic_id) {
-        return { Listcoursestudentplan_id, error: 'Academic ID mismatch' };
-      }
-
-      // อัปเดตข้อมูล
-      const updated = await prisma.listcoursestudentplan.update({
-        where: { Listcoursestudentplan_id: Number(Listcoursestudentplan_id) },
-        data: {
-          grade: grade || listcoursestudentplan.grade,
-          teacher_name: teacher_name || listcoursestudentplan.teacher_name,
-        },
-      });
-
-      return updated;
+    // Proceed to update the section if academic_id matches
+    const updatedlistcourseregister = await prisma.listcourseregister.update({
+      where: { listcourseregister_id: Number(listcourseregister_id) },
+      data: {
+        grade,
+        teacher_name,
+      },
     });
 
-    const results = await Promise.all(updatePromises);
-
-    // แสดงผลลัพธ์ที่ได้รับ
-    res.status(200).json(results);
+    return res.status(200).json(updatedlistcourseregister);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
-
 
 
 // Delete a Register

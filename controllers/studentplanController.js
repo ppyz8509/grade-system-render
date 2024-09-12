@@ -95,16 +95,18 @@ exports.createListStudentplan = async (req, res) => {
       return res.status(403).json({ message: 'Academic ID mismatch' });
     }
 
-    const existingListStudentplan = await prisma.listcoursestudentplan.findFirst({
-      where: {
-        course_id: course_id,
-        studentplan_id: Number(studentplan_id),
-        academic_id: user.academic.academic_id,
-      },
-    });
-    if (existingListStudentplan) {
-      return res.status(400).json({ message: 'listcoursestudentplan already exists' });
-    }
+        // ตรวจสอบว่า Listcoursestudentplan ที่มี course_id และ studentplan_id นี้มีอยู่แล้วหรือไม่
+        const existingListStudentplan = await prisma.listcoursestudentplan.findFirst({
+          where: {
+            course_id: course_id,
+            academic_id: user.academic.academic_id,
+          },
+        });
+    
+        if (existingListStudentplan) {
+            return res.status(400).json({ message: 'Course already exists in the academic ID' });
+        }
+
 
  
     const liststudent_plan = await prisma.listcoursestudentplan.create({
