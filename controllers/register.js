@@ -125,7 +125,19 @@ exports.getRegisters = async (req, res) => {
     const registers = await prisma.register.findMany({
       where: { student_id },
         include:{
-          listcourseregister: true
+          listcourseregister:{
+            select:{
+              grade:true,
+              course_id:true,
+              teacher:{
+                select:{
+                  titlename:true,
+                  firstname:true,
+                  lastname:true
+                }
+              }
+            }
+          }
         }
     });
 
@@ -141,6 +153,21 @@ exports.getRegisterById = async (req, res) => {
     const { register_id } = req.params;
     const register = await prisma.register.findUnique({
       where: { register_id: Number(register_id) },
+      include:{
+        listcourseregister:{
+          select:{
+            grade:true,
+            course_id:true,
+            teacher:{
+              select:{
+                titlename:true,
+                firstname:true,
+                lastname:true
+              }
+            }
+          }
+        }
+      }
     });
     if (register) {
       res.status(200).json(register);
@@ -156,7 +183,7 @@ exports.getRegisterById = async (req, res) => {
 exports.updateRegister = async (req, res) => {
   try {
     const { listcourseregister_id } = req.params;
-    const { grade,teacher_name } = req.body;
+    const { grade,teacher_id } = req.body;
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
     // Check for valid input
@@ -181,14 +208,32 @@ exports.updateRegister = async (req, res) => {
     if (!existslistcourseregister) {
       return res.status(404).json({ message: 'Section not found' });
     }
+    
+    const existslistteacher = await prisma.teacher.findUnique({
+      where: { teacher_id: Number(teacher_id) },
+    });
+    console.log("existslistteacher",existslistteacher);
+    
+    if (!existslistteacher) {
+      return res.status(404).json({ message: 'teacher not found' });
+    }
+    
 
     // Proceed to update the section if academic_id matches
     const updatedlistcourseregister = await prisma.listcourseregister.update({
       where: { listcourseregister_id: Number(listcourseregister_id) },
       data: {
         grade,
-        teacher_name,
-      },
+        teacher_id,
+      },include:{
+        teacher:{
+          select:{
+            titlename:true,
+            firstname:true,
+            lastname:true
+          }
+        }
+      }
     });
 
     return res.status(200).json(updatedlistcourseregister);

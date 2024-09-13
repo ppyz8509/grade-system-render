@@ -159,12 +159,13 @@ model register {
 model listcourseregister {
   listcourseregister_id Int     @id @default(autoincrement())
   grade                 Grade?
-  teacher_name          String? @db.VarChar(255)
+  teacher_id            Int?
   course_id             String
   register_id           Int
-
+  
   course   course   @relation(fields: [course_id], references: [course_id])
   register register @relation(fields: [register_id], references: [register_id])
+  teacher  teacher? @relation(fields: [teacher_id], references: [teacher_id])
 }
 
 model section {
@@ -237,7 +238,7 @@ model teacher {
   teacher_id Int @id @default(autoincrement())
 
   titlename String @db.VarChar(255)
-
   firstname String @db.VarChar(255)
   lastname  String @db.VarChar(255)
+  listcourseregister listcourseregister[]
 }
