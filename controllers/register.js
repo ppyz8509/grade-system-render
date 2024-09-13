@@ -127,10 +127,12 @@ exports.getRegisters = async (req, res) => {
         include:{
           listcourseregister:{
             select:{
-              grade:true,
-              course_id:true,
               listcourseregister_id:true,
-              teacher:{
+              course:{
+                select:{
+                  courseNameTH:true}},
+               grade:true,
+                teacher:{
                 select:{
                   titlename:true,
                   firstname:true,
@@ -156,10 +158,13 @@ exports.getRegisterById = async (req, res) => {
       where: { register_id: Number(register_id) },
       include:{
         listcourseregister:{
+          
           select:{
-            grade:true,
-            course_id:true,
             listcourseregister_id:true,
+            grade:true,
+            course:{
+              select:{
+                courseNameTH:true}},
             teacher:{
               select:{
                 titlename:true,
@@ -228,11 +233,16 @@ exports.updateRegister = async (req, res) => {
         grade,
         teacher_id,
       },include:{
+        course:{
+        select:{
+          courseNameTH:true
+        }
+      },
         teacher:{
           select:{
             titlename:true,
             firstname:true,
-            lastname:true
+            lastname:true,
           }
         }
       }
