@@ -31,7 +31,13 @@ exports.createAdmin = async (req, res) => {
         phone,
         email,
         academic_id
-      },
+      },include:{
+        academic:{
+          select:{
+            academic_name:true
+          }
+        }
+      }
     });
     res.status(201).json(admin);
   } catch (error) {

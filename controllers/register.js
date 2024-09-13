@@ -94,7 +94,6 @@ exports.createRegister = async (req, res) => {
             data: {
               course_id: listCourse.course_id,
               register_id: register.register_id,
-              // คุณสามารถเพิ่มฟิลด์อื่นๆ ที่จำเป็นที่นี่
             },
           });
         })

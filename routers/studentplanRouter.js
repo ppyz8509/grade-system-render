@@ -7,7 +7,8 @@ const {
   updateStudentPlan,
   deleteStudentPlan,
   getStudentplanByAcademic,
-  deleteListStudentplan
+  deleteListStudentplan,
+  getStudentplanById
   
 } = require('../controllers/studentplanController');
 const { authenticateToken, isAdmin, isAdvisor }  = require("../middlewares/authorize");
@@ -15,6 +16,7 @@ const { authenticateToken, isAdmin, isAdvisor }  = require("../middlewares/autho
 // Create a Student Plan
 router.post('/createStudentPlan', createStudentPlan);
 router.post('/createListStudentplan/:studentplan_id', createListStudentplan);
+router.get('/getStudentplanById/:studentplan_id', getStudentplanById);
 
 // Read all Student Plans
 router.get('/getStudentPlans', getStudentPlans);

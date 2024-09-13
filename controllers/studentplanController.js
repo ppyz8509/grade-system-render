@@ -83,7 +83,13 @@ exports.createListStudentplan = async (req, res) => {
     });
     console.log(studentplan);
     
-    
+    const course = await prisma.course.findUnique({
+      where: { course_id: String(course_id) },
+    });
+    if (!course) {
+      return res.status(404).json({ message: 'course not found' });
+    } 
+
     if (!studentplan) {
       return res.status(404).json({ message: 'studentplan not found' });
     } 
@@ -145,7 +151,39 @@ exports.getStudentPlans = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+exports.getStudentplanById = async (req, res) => {
+  try {
+    const { studentplan_id } = req.params;
+    
+    if (isNaN(studentplan_id)) {
+      return res.status(400).json({ message: 'Invalid section ID' });
+    }
+    
+    const studentplan = await prisma.studentplan.findUnique({
+      where: { studentplan_id: Number(studentplan_id) },
+      include: {
+        Listcoursestudentplan: {
+          include: {
+            course: {
+              select: {
+                courseNameTH: true
+              }
+            }
+          }
+        }
+      }
+    });
+    
+    if (!studentplan) {
+      return res.status(404).json({ message: 'studentplan not found' });
+    } 
+   
+    return res.status(200).json(studentplan);
 
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
 
 exports.getStudentplanByAcademic = async (req, res) => {
   try {
