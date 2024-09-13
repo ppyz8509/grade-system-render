@@ -129,6 +129,7 @@ exports.getRegisters = async (req, res) => {
             select:{
               grade:true,
               course_id:true,
+              listcourseregister_id:true,
               teacher:{
                 select:{
                   titlename:true,
@@ -158,6 +159,7 @@ exports.getRegisterById = async (req, res) => {
           select:{
             grade:true,
             course_id:true,
+            listcourseregister_id:true,
             teacher:{
               select:{
                 titlename:true,
