@@ -140,6 +140,9 @@ model major {
   majorUnit    String               @db.VarChar(50)
   status       Status               @default(ACTIVE)
   category     category[]
+  studentplan  studentplan[]
+  student      student[]
+  register     register[]
   academic_id  Int
   academic     academic_disciplines @relation(fields: [academic_id], references: [academic_id])
 }
@@ -151,18 +154,21 @@ model register {
   year           String @db.VarChar(50)
   semester       Int
 
+  major_id       Int
+  major          major                @relation(fields: [major_id], references: [major_id])
+
   student            student              @relation(fields: [student_id], references: [student_id])
   studentplan        studentplan          @relation(fields: [studentplan_id], references: [studentplan_id])
   listcourseregister listcourseregister[]
 }
 
 model listcourseregister {
-  listcourseregister_id Int     @id @default(autoincrement())
+  listcourseregister_id Int    @id @default(autoincrement())
   grade                 Grade?
   teacher_id            Int?
   course_id             String
   register_id           Int
-  
+
   course   course   @relation(fields: [course_id], references: [course_id])
   register register @relation(fields: [register_id], references: [register_id])
   teacher  teacher? @relation(fields: [teacher_id], references: [teacher_id])
@@ -180,35 +186,46 @@ model section {
 }
 
 model student {
-  student_id String     @id
-  username   String     @unique @db.VarChar(255)
-  password   String     @db.VarChar(255)
-  firstname  String     @db.VarChar(255)
-  lastname   String     @db.VarChar(255)
-  phone      String?    @db.VarChar(10)
-  email      String?    @db.VarChar(255)
-  sec_id     Int
-  register   register[]
-  section    section    @relation(fields: [sec_id], references: [sec_id])
+  student_id  String     @id
+  username    String     @unique @db.VarChar(255)
+  password    String     @db.VarChar(255)
+  titlenameTh String     @db.VarChar(255)
+  firstname   String     @db.VarChar(255)
+  lastname    String     @db.VarChar(255)
+  phone       String?    @db.VarChar(10)
+  email       String?    @db.VarChar(255)
+  sec_id      Int
+  register    register[]
+  section     section    @relation(fields: [sec_id], references: [sec_id])
 
   academic_id Int
   academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
 
+  major_id       Int
+  major          major                @relation(fields: [major_id], references: [major_id])
+
   //info
-  firstnameEng      String?
-  lastnameEng       String?
-  personal_id       String? //เลขประจำตัวประชาชน
-  corps             String? //คณะ
-  center            String? //ศูนย์
-  major             String? //สาขาวิชา
-  minor_subject     String? //วิชาโท
-  status            String? //สถานภาพ
-  entered_join      String? //วิธีรับเข้า
-  pre_educational   String? //วุฒิก่อนเข้ารับการศึกษา
-  submission_status String? //สถานะส่งวุฒิการศึกษา
-  graduated_from    String? //จบการศึกษาจาก
-  advisor           String? //advisor
-  address           String? //ที่อยู่
+  birthdate        String?
+  yeardate         String?
+  titlenameEng     String?  @db.VarChar(255)
+  firstnameEng     String?
+  lastnameEng      String?
+  sector_status    String? //เป็นนักศึกษาภาค….ปกติ กศ.พป. ปริญญาตรี
+  corps            String?
+  pre_educational  String?
+  graduated_from   String?
+  pregraduatedyear String?
+  afterendcontact  String?
+  homenumber       String?
+  road             String?
+  alley            String?
+  subdistrict      String?
+  district         String?
+  province         String?
+  zipcode          String?
+  advisor          String?
+  wanttoend        String?
+  yeartoend        String?
 }
 
 model studentplan {
@@ -216,8 +233,12 @@ model studentplan {
   year           String               @db.VarChar(50)
   semester       Int
   register       register[]
+
   academic_id    Int
   academic       academic_disciplines @relation(fields: [academic_id], references: [academic_id])
+
+  major_id       Int
+  major          major                @relation(fields: [major_id], references: [major_id])
 
   Listcoursestudentplan Listcoursestudentplan[]
 }
@@ -237,8 +258,8 @@ model Listcoursestudentplan {
 model teacher {
   teacher_id Int @id @default(autoincrement())
 
-  titlename String @db.VarChar(255)
-  firstname String @db.VarChar(255)
-  lastname  String @db.VarChar(255)
+  titlename          String               @db.VarChar(255)
+  firstname          String               @db.VarChar(255)
+  lastname           String               @db.VarChar(255)
   listcourseregister listcourseregister[]
 }

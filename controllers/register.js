@@ -33,7 +33,7 @@ exports.createRegister = async (req, res) => {
     // หา studentplan ที่มี academic_id ตรงกับที่ได้จาก token
     const studentplans = await prisma.studentplan.findMany({
       where: { academic_id: academic_id },
-      include: { Listcoursestudentplan: true },
+      include: { Listcoursestudentplan: true }
     });
 
     console.log("studentplan",studentplans);
@@ -49,6 +49,7 @@ exports.createRegister = async (req, res) => {
           where: {
             student_id: student_id,
             studentplan_id: plan.studentplan_id,
+            major_id: plan.major_id,
             year: plan.year,
             semester: plan.semester,
           },
@@ -62,6 +63,7 @@ exports.createRegister = async (req, res) => {
           data: {
             student_id: student_id,
             studentplan_id: plan.studentplan_id,
+            major_id: plan.major_id,
             year: plan.year,
             semester: plan.semester,
           },
@@ -110,7 +112,6 @@ exports.createRegister = async (req, res) => {
 };
 
 
-// Read all Registers
 exports.getRegisters = async (req, res) => {
   try {
     const { student_id } = req.params;
@@ -121,16 +122,14 @@ exports.getRegisters = async (req, res) => {
     if (!student) {
       return res.status(404).json({ message: 'Student not found' });
     }
-    // Find registers for the given student_id
+
     const registers = await prisma.register.findMany({
       where: { student_id },
         include:{
           listcourseregister:{
             select:{
               listcourseregister_id:true,
-              course:{
-                select:{
-                  courseNameTH:true}},
+              course:true ,
                grade:true,
                 teacher:{
                 select:{
@@ -150,7 +149,7 @@ exports.getRegisters = async (req, res) => {
   }
 };
 
-// Read a Single Register
+
 exports.getRegisterById = async (req, res) => {
   try {
     const { register_id } = req.params;
@@ -162,9 +161,7 @@ exports.getRegisterById = async (req, res) => {
           select:{
             listcourseregister_id:true,
             grade:true,
-            course:{
-              select:{
-                courseNameTH:true}},
+            course: true ,
             teacher:{
               select:{
                 titlename:true,
@@ -186,28 +183,28 @@ exports.getRegisterById = async (req, res) => {
   }
 };
 
-// Update a Register
+
 exports.updateRegister = async (req, res) => {
   try {
     const { listcourseregister_id } = req.params;
     const { grade,teacher_id } = req.body;
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
-    // Check for valid input
+
     if (isNaN(listcourseregister_id)) {
       return res.status(400).json({ message: 'Invalid section ID' });
     }
     if (!listcourseregister_id) {
       return res.status(400).json({ message: 'listcourseregister_id is required' });
     }
-
-    // Get user from token
+    if (isNaN(teacher_id)) {
+      return res.status(400).json({ message: 'Invalid teacher ID' });
+    }
     const user = getUserFromToken(token);
     if (!user || !user.academic) {
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
-    // Find the section by sec_id
     const existslistcourseregister = await prisma.listcourseregister.findUnique({
       where: { listcourseregister_id: Number(listcourseregister_id) },
     });
@@ -224,20 +221,15 @@ exports.updateRegister = async (req, res) => {
     if (!existslistteacher) {
       return res.status(404).json({ message: 'teacher not found' });
     }
-    
 
-    // Proceed to update the section if academic_id matches
+
     const updatedlistcourseregister = await prisma.listcourseregister.update({
       where: { listcourseregister_id: Number(listcourseregister_id) },
       data: {
         grade,
         teacher_id,
       },include:{
-        course:{
-        select:{
-          courseNameTH:true
-        }
-      },
+        course:true,
         teacher:{
           select:{
             titlename:true,
@@ -255,10 +247,14 @@ exports.updateRegister = async (req, res) => {
 };
 
 
-// Delete a Register
+
 exports.deleteRegister = async (req, res) => {
   try {
     const { register_id } = req.params;
+    
+    await prisma.listcourseregister.deleteMany({
+      where: { register_id: Number(register_id) },
+    });
     const register = await prisma.register.delete({
       where: { register_id: Number(register_id) },
     });

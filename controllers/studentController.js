@@ -16,7 +16,7 @@ const getUserFromToken = (token) => {
 // Create a Student
 exports.createStudent = async (req, res) => {
   try {
-    const { student_id, username, password, firstname, lastname, phone, email, sec_id } = req.body;
+    const { major_id,student_id, username, password, firstname, lastname, phone, email, sec_id,titlenameTh } = req.body;
     const token = req.header('Authorization')?.replace('Bearer ', '');
     if (!student_id || !username || !password || !firstname || !lastname || !sec_id) {
       return res.status(400).json({ message: 'Missing required fields' });
@@ -45,11 +45,13 @@ exports.createStudent = async (req, res) => {
         student_id,
         username,
         password,
+        titlenameTh,
         firstname,
         lastname,
         phone,
         email,
         sec_id,
+        major_id,
         academic_id: user.academic.academic_id,
       },
     });
@@ -71,6 +73,32 @@ exports.getStudents = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+
+exports.getStudentforCheck = async (req, res) => {
+  try {
+    const { student_id } = req.params;
+
+    if (isNaN(student_id)) {
+      return res.status(400).json({ message: 'ID is not number' });
+    }
+    const student = await prisma.student.findUnique({
+      where: { student_id: String(student_id) },
+      include: {
+        major: true,
+      }
+    });
+
+    if (!student) {
+      return res.status(404).json({ message: 'student not found' });
+    } 
+    
+    return res.status(200).json(student);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 
 // Read a Single Student
 exports.getStudentById = async (req, res) => {

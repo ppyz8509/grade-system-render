@@ -15,10 +15,10 @@ const getUserFromToken = (token) => {
 
 exports.createStudentPlan = async (req, res) => {
   try {
-    const { year, semester } = req.body;
+    const { year, semester, major_id } = req.body;
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
-    if (!year || !semester) {
+    if (!year || !semester|| !major_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
@@ -29,10 +29,18 @@ exports.createStudentPlan = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
+    const checkmajor = await prisma.major.findUnique({
+      where: { major_id: Number(major_id)}
+    })
+    if (!checkmajor) {
+      return res.status(403).json({ message: 'major not found' });
+    }
+
     const existingCourse = await prisma.studentplan.findFirst({
       where: {
         year: year,
         semester: semester,
+        major_id: major_id,
         academic_id: user.academic.academic_id,
       },
     });
@@ -40,19 +48,12 @@ exports.createStudentPlan = async (req, res) => {
     if (existingCourse) {
       return res.status(400).json({ message: 'Student plan already exists ' });
     }
-    // // ถ้าพบข้อมูลที่ตรงกัน
-    // if (existingCourse) {
-    //   // ตรวจสอบว่า academic_id ของ existingCourse ตรงกับ academic_id ของผู้ใช้ที่ล็อกอินหรือไม่
-    //   if (existingCourse.academic_id !== user.academic.academic_id) {
-    //     return res.status(400).json({ message: 'Student plan already exists in a different academic' });
-    //   }
-    // }
 
-    // ถ้าทุกเงื่อนไขผ่านให้สร้าง student plan ใหม่
     const student_plan = await prisma.studentplan.create({
       data: {
         year,
         semester,
+        major_id,
         academic_id: user.academic.academic_id,
       },
     });
