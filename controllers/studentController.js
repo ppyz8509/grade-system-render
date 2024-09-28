@@ -125,7 +125,36 @@ exports.getStudentById = async (req, res) => {
 exports.updateStudent = async (req, res) => {
   try {
     const { student_id } = req.params;
-    const { username, password, firstname, lastname, phone, email, sec_id } = req.body;
+    const {        
+      username,
+      password,
+      firstname,
+      lastname,
+      phone,
+      email,
+      birthdate,
+      monthdate,
+      yeardate,
+      titlenameEng,
+      firstnameEng,
+      lastnameEng,
+      sector_status,
+      corps,
+      pre_educational,
+      graduated_from,
+      pregraduatedyear,
+      afterendcontact,
+      homenumber,
+      road,
+      alley,
+      subdistrict,
+      district,
+      province,
+      zipcode,
+      advisor,
+      wanttoend,
+      yeartoend,
+    } = req.body;
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
 
@@ -168,7 +197,28 @@ exports.updateStudent = async (req, res) => {
         lastname,
         phone,
         email,
-        sec_id,
+        birthdate,
+        monthdate,
+        yeardate,
+        titlenameEng,
+        firstnameEng,
+        lastnameEng,
+        sector_status,
+        corps,
+        pre_educational,
+        graduated_from,
+        pregraduatedyear,
+        afterendcontact,
+        homenumber,
+        road,
+        alley,
+        subdistrict,
+        district,
+        province,
+        zipcode,
+        advisor,
+        wanttoend,
+        yeartoend,
       },
     });
     res.status(200).json(student);

@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url = env("DATABASE_URL")
 }
 
 enum Grade {
@@ -206,6 +206,7 @@ model student {
 
   //info
   birthdate        String?
+  monthdate        String?
   yeardate         String?
   titlenameEng     String?  @db.VarChar(255)
   firstnameEng     String?
