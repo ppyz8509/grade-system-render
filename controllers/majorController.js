@@ -80,6 +80,31 @@ exports.getMajorByCode = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching the major' });
   }
 };
+exports.getMajorById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const majorId = parseInt(id, 10);
+
+    if (isNaN(majorId)) {
+      return res.status(400).json({ error: "Invalid major ID format" });
+    }
+
+    const major = await prisma.major.findUnique({
+      where: { major_id: majorId },
+    });
+
+    if (!major) {
+      return res.status(404).json({ error: "Major not found" });
+    }
+
+    res.status(200).json(major);
+  } catch (error) {
+    console.error("Error fetching major by ID:", error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while fetching the major" });
+  }
+};
 exports.updateMajor = async (req, res) => {
   try {
     const { id } = req.params;

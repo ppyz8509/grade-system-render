@@ -6,6 +6,7 @@ const authorize = require('../middlewares/authorize');///authorize(['role']);
 //major
 router.post("/createMajor", majorController.createMajor);
 router.get("/getMajorByCode/:major_code", majorController.getMajorByCode);
+router.get("/getMajorById/:id", majorController.getMajorById);
 router.get("/getAllMajors/",majorController.getAllMajors);
 router.put("/updateMajor/:id", majorController.updateMajor);
 router.delete("/deleteMajor/:major_id", majorController.deleteMajor);

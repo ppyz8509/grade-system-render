@@ -131,6 +131,7 @@ exports.getRegisters = async (req, res) => {
               listcourseregister_id:true,
               course:true ,
                grade:true,
+               freesubject:true,
                 teacher:{
                 select:{
                   titlename:true,
@@ -162,6 +163,7 @@ exports.getRegisterById = async (req, res) => {
             listcourseregister_id:true,
             grade:true,
             course: true ,
+            freesubject:true,
             teacher:{
               select:{
                 titlename:true,
@@ -183,11 +185,43 @@ exports.getRegisterById = async (req, res) => {
   }
 };
 
+exports.getlistcourseRegisterById = async (req, res) => {
+  try {
+    const { listcourseregister_id } = req.params;
+    
+    const listcourseregister = await prisma.listcourseregister.findUnique({
+      where: { listcourseregister_id: Number(listcourseregister_id) },
+          select:{
+            listcourseregister_id:true,
+            course: true ,
+            grade:true,
+            freesubject:true,
+            teacher:{
+              select:{
+                titlename:true,
+                firstname:true,
+                lastname:true
+              }
+            }
+          }
+        
+      
+    });
+    if (listcourseregister) {
+      res.status(200).json(listcourseregister);
+    } else {
+      res.status(404).json({ message: 'Register not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 
 exports.updateRegister = async (req, res) => {
   try {
     const { listcourseregister_id } = req.params;
-    const { grade,teacher_id } = req.body;
+    const { grade,teacher_id,freesubject } = req.body;
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
 
@@ -228,6 +262,7 @@ exports.updateRegister = async (req, res) => {
       data: {
         grade,
         teacher_id,
+        freesubject,
       },include:{
         course:true,
         teacher:{
