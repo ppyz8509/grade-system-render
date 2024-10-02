@@ -65,7 +65,18 @@ exports.createStudent = async (req, res) => {
 // Read all Students
 exports.getStudents = async (req, res) => {
   try {
-    const students = await prisma.student.findMany();
+    const students = await prisma.student.findMany(
+      {   include: {
+        advisor: {
+          select: {
+            titlename: true,
+            firstname: true,
+            lastname: true,
+          }
+        }
+      }
+}
+    );
     if (students.length === 0) {
       return res.status(404).json({ message: 'students have no' });
     }
@@ -117,7 +128,17 @@ exports.getStudentById = async (req, res) => {
       return res.status(400).json({ message: 'ID is not number' });
     }
     const student = await prisma.student.findUnique({
-      where: { student_id: String(student_id) },
+      where: { student_id: String(student_id)
+      }, include:{
+          
+        advisor: {
+          select: {
+            titlename: true,
+            firstname: true,
+            lastname: true,
+          }
+        }
+      }
     });
 
     if (!student) {
