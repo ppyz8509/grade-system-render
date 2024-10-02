@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const e = require('express');
 const prisma = new PrismaClient();
 
 // Create an SuperAdmin
@@ -33,7 +34,6 @@ exports.createSuperAdmin = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
-
 
 exports.getSuperAdmins = async (req, res) => {
   try {
@@ -127,5 +127,91 @@ exports.deleteSuperAdmin = async (req, res) => {
     }
     console.error("Error deleting SuperAdmin:", error);
     return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
+
+exports.createAcademic = async (req, res) => {
+  try {
+    const { academic_name } = req.body;
+
+    if (!academic_name) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    const academic = await prisma.academic_disciplines.create({
+      data: {
+        academic_name, 
+      },
+    });
+    
+
+    res.status(201).json(academic);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+exports.getAllAcademics = async (req, res) => {
+  try {
+    const academics = await prisma.academic_disciplines.findMany();
+    res.status(200).json(academics);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+exports.getAcademicById = async (req, res) => {
+  try {
+    const { academic_id } = req.params;
+
+    const academic = await prisma.academic_disciplines.findUnique({
+      where: { academic_id: parseInt(academic_id) },
+    });
+
+    if (!academic) {
+      return res.status(404).json({ message: 'Academic discipline not found' });
+    }
+
+    res.status(200).json(academic);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+exports.updateAcademic = async (req, res) => {
+  try {
+    const { academic_id } = req.params;
+    const { academic_name } = req.body;
+
+    if (!academic_name) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    const academic = await prisma.academic_disciplines.update({
+      where: { academic_id: parseInt(academic_id) },
+      data: { academic_name },
+    });
+
+    res.status(200).json(academic);
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ message: 'Academic discipline not found' });
+    }
+    return res.status(500).json({ error: error.message });
+  }
+};
+exports.deleteAcademic = async (req, res) => {
+  try {
+    const { academic_id } = req.params;
+
+    const academic = await prisma.academic_disciplines.delete({
+      where: { academic_id: parseInt(academic_id) },
+    });
+
+    res.status(200).json({ message: 'Academic discipline deleted successfully' });
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ message: 'Academic discipline not found' });
+    }
+    return res.status(500).json({ error: error.message });
   }
 };
