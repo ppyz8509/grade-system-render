@@ -64,6 +64,7 @@ model admin {
 
 model advisor {
   advisor_id Int     @id @default(autoincrement())
+  titlename          String               @db.VarChar(255)
   username   String  @unique @db.VarChar(255)
   password   String  @db.VarChar(255)
   firstname  String  @db.VarChar(255)

@@ -87,6 +87,13 @@ exports.getStudentforCheck = async (req, res) => {
       where: { student_id: String(student_id) },
       include: {
         major: true,
+        advisor: {
+          select: {
+            titlename: true,
+            firstname: true,
+            lastname: true,
+          }
+        }
       }
     });
 
