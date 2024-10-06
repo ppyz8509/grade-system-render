@@ -2,44 +2,56 @@ const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Helper function to extract user information from JWT token
+// ดึงข้อมูลผู้ใช้จาก JWT token
 const getUserFromToken = (token) => {
   try {
+    // ตรวจสอบและถอดรหัส JWT token โดยใช้คีย์ลับจากตัวแปรสภาพแวดล้อม (environment variables)
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // ส่งค่าที่ถูกถอดรหัส ซึ่งเป็นข้อมูลของผู้ใช้กลับมา
     return decoded;
   } catch (err) {
+    // หากการตรวจสอบ token ล้มเหลว จะส่งค่า null กลับมา
     return null;
   }
-  
 };
 
+// ฟังก์ชันสำหรับสร้าง Section ใหม่
 exports.createSection = async (req, res) => {
   try {
     const { sec_name } = req.body;
+
+    // รับ JWT token จาก header 'Authorization' และลบ 'Bearer ' ออกจาก token
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
-    
+    // ตรวจสอบว่ามีการส่ง sec_name มาหรือไม่
     if (!sec_name) {
-      return res.status(400).json({ message: 'Section name are required' });
+      return res.status(400).json({ message: 'ต้องระบุชื่อ Section' });
     }
+
+    // ตรวจสอบว่า section ที่มีชื่อเดียวกันนี้มีอยู่ในฐานข้อมูลหรือไม่
     const existingSection = await prisma.section.findFirst({ where: { sec_name } });
     if (existingSection) {
-      return res.status(409).json({ message: 'section already exists' });
+      return res.status(409).json({ message: 'Section นี้มีอยู่แล้ว' });
     }
+
     const user = getUserFromToken(token);
     console.log(user);
-    
+
+    // สร้าง Section ใหม่ในฐานข้อมูลโดยใช้ Prisma
     const section = await prisma.section.create({
       data: {
-        sec_name,
+        sec_name,  // ชื่อ Section
+        // ใช้ academic_id จากข้อมูลผู้ใช้ที่ถอดรหัสออกมาเพื่อเชื่อมโยง Section กับข้อมูลทางการศึกษา
         academic_id: user.academic.academic_id,
       },
     });
+
     return res.status(201).json(section);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 };
+
 
 exports.getSections = async (req, res) => {
   try {

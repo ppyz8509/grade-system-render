@@ -49,5 +49,4 @@ module.exports = {
   isAdmin,
   isCourse_in,
   isAdvisor
-
 };
