@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require("express");
 const cors = require("cors");
-const prismaClient = require('./models/prisma');
+const connectDb = require('./models/prisma');
 
 const authRouter = require("./routers/authRouter");
 const course_in_Router = require("./routers/course_in_Router");
@@ -45,6 +45,7 @@ app.use('/api', advisor);
 app.use('/api', section);
 
 
-app.listen(3000, () => {
-    console.log("Server running on port 3000");
+app.listen (3000,async () => {
+    await connectDb();
+    console.log("Server is running on port 3000");
 });

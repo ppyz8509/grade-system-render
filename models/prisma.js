@@ -10,6 +10,5 @@ const connectDb = async () => {
     console.log("Failed to connect to db:", error);
   }
 };
-connectDb();
 
-module.exports = prismaClient;
+module.exports = connectDb;
