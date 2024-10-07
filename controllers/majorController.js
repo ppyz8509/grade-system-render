@@ -510,20 +510,6 @@ exports.deleteGroupMajor = async (req, res) => {
 };
 
 
-// Course
-exports.createCourse = async (req, res) => {
-  const {
-    course_id,
-    courseNameTH,
-    courseNameENG,
-    courseUnit,
-    courseTheory,
-    coursePractice,
-    categoryResearch,
-    category_id,
-    group_id,
-    freesubject
-  } = req.body;
 
 // Course
 exports.createCourse = async (req, res) => {
