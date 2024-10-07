@@ -1,34 +1,35 @@
-const express = require("express");
-const jwt = require("jsonwebtoken");
-const { login } = require("../controllers/authController");
-const checkRole = require("../middlewares/checkRole");
+require('dotenv').config(); 
+const express = require('express');
+const jwt = require('jsonwebtoken');
+const { login } = require('../controllers/authController'); 
+const JWT_SECRET = process.env.JWT_SECRET; 
 
+const router = express.Router(); // สร้าง router ใหม่จาก express
 
-const router = express.Router();
-router.post("/login", login);
+router.post('/login', login);
 
-
-router.get('/decode-token', checkRole(['ADMIN', 'ADVISOR', 'STUDENT', 'COURSE_INSTRUCTOR']), async (req, res) => {
+// Route สำหรับถอดรหัส token
+router.get('/decode-token', async (req, res) => {
     try {
+        // ดึง token จาก header Authorization
         const token = req.headers.authorization.split(" ")[1];
-        // แยก JWT token จากส่วนหัว Authorization ของคำขอ
 
-        const decoded = jwt.decode(token);
-        // ถอดรหัส token ที่แยกมาโดยใช้เมธอด jwt.decode
+        // ถอดรหัส token โดยใช้ JWT_SECRET
+        const decoded = jwt.verify(token, JWT_SECRET);
 
-
+        // หากไม่สามารถถอดรหัสได้
         if (!decoded) {
             return res.status(400).json({ message: "Invalid token" });
-            // ถ้าถอดรหัส token แล้วได้ค่า null หรือ undefined จะส่งคำตอบ 400 
         }
 
+        // ส่งข้อมูลที่ถอดรหัสแล้วกลับไป
         res.json({ decoded });
-        // ส่ง payload ที่ถอดรหัสแล้วกลับไปเป็นคำตอบในรูปแบบ JSONasdasd
     } catch (error) {
-        console.error("Error decoding token:", error.message);
-        res.status(500).json({ message: "Internal server error" });
-        // ถ้าเกิดข้อผิดพลาดใด ๆ ระหว่างกระบวนการนี้ จะบันทึกข้อผิดพลาดและส่งคำตอบ 500
+        console.error("Error decoding token:", error.message); 
+        res.status(500).json({ message: "Internal server error" }); 
     }
 });
 
-module.exports = router;
+
+module.exports = router; 
+

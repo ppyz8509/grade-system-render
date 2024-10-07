@@ -1,166 +1,276 @@
-
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url = env("DATABASE_URL")
 }
 
-enum Role {
-  ADMIN
-  STUDENT
-  ADVISOR
-  COURSE_INSTRUCTOR
+enum Grade {
+  A
+  B
+  B_plus
+  C
+  C_plus
+  D
+  D_plus
+  E
+  PASS
+  FAIL
 }
 
-model Admin {
-  Admin_id      Int      @id @default(autoincrement())
-  A_fristname   String
-  A_lastname    String
-  A_username    String   
-  A_password    String  
-  role          Role        @default(ADMIN)
-  A_phone       Int?
-  A_email       String? 
+enum FreeSubject {
+  true
+  false
 }
 
+model academic_disciplines {
+  academic_id   Int    @id @default(autoincrement())
+  academic_name String
 
-model COURSE_INSTRUCTOR {
-  C_id          Int      @id @default(autoincrement())
-  C_fristname   String
-  C_lastname    String
-  C_username    String   
-  C_password    String  
-  role          Role        @default(COURSE_INSTRUCTOR)
-  C_phone       Int?
-  C_email       String? 
+  major                 major[]
+  admin                 admin[]
+  advisor               advisor[]
+  course_in             course_in[]
+  studnet               student[]
+  studentplan           studentplan[]
+  Listcoursestudentplan Listcoursestudentplan[]
+  section               section[]
 }
 
-model Student {
-  S_id          String
-  S_firstname   String
-  S_lastname    String
-  S_password    String
-  role          Role        @default(STUDENT)
-  S_phone       String?     // อนุญาตให้เป็น null
-  S_email       String?     // อนุญาตให้เป็น null
-
-  classroom     Classroom   @relation(fields: [room],references: [roomname])
-  room          String          
-
-  @@id([S_id])
+model superadmin {
+  superadmin_id Int     @id @default(autoincrement())
+  username      String  @unique @db.VarChar(255)
+  password      String  @db.VarChar(255)
+  firstname     String  @db.VarChar(255)
+  lastname      String  @db.VarChar(255)
+  phone         String? @db.VarChar(10)
+  email         String? @db.VarChar(255)
 }
 
-model Teacher {
-  T_id            Int         @default(autoincrement())
-  T_firstname     String
-  T_lastname      String
-  T_username      String      
-  T_password      String  
-  role            Role        @default(ADVISOR)
-  T_phone         Int?
-  T_email         String? 
+model admin {
+  admin_id  Int     @id @default(autoincrement())
+  username  String  @unique @db.VarChar(255)
+  password  String  @db.VarChar(255)
+  firstname String  @db.VarChar(255)
+  lastname  String  @db.VarChar(255)
+  phone     String? @db.VarChar(10)
+  email     String? @db.VarChar(255)
 
-  advisorrooms    Advisor[]
-
-  @@id([T_id , T_firstname , T_lastname])
+  academic_id Int
+  academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
 }
 
-model Classroom {
-  roomname      String     @id 
-
-  teachers      Advisor[]
-  students      Student[] 
+model advisor {
+  advisor_id Int     @id @default(autoincrement())
+  titlename          String               @db.VarChar(255)
+  username   String  @unique @db.VarChar(255)
+  password   String  @db.VarChar(255)
+  firstname  String  @db.VarChar(255)
+  lastname   String  @db.VarChar(255)
+  sec_id     Int
+  phone      String? @db.VarChar(50)
+  email      String? @db.VarChar(255)
+  section    section @relation(fields: [sec_id], references: [sec_id])
+  academic_id Int
+  academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
+  student    student[]
 }
 
-model Advisor {
-  Advisor_id                Int         @id @default(autoincrement())
-
-  teacher             Teacher     @relation(fields: [teacherId, teacherfirstName, teacherlastName], references: [T_id,T_firstname,T_lastname])
-  teacherId           Int
-  teacherfirstName    String
-  teacherlastName     String
-
-  classroom           Classroom     @relation(fields: [roomName], references: [roomname])
-  roomName            String
-
+model category {
+  category_id   Int           @id @default(autoincrement())
+  category_name String        @db.VarChar(255)
+  category_unit Int
+  major_id      Int
+  major         major         @relation(fields: [major_id], references: [major_id])
+  course        course[]
+  group_major   group_major[]
 }
 
+model course {
+  course_id          String                  @id
+  courseNameTH       String                  @db.VarChar(255)
+  courseNameENG      String                  @db.VarChar(255)
+  courseUnit         Int
+  courseTheory       Int?
+  coursePractice     Int?
+  categoryResearch   Int?
+  category_id        Int
+  group_id           Int
 
-//major by PPYz
+
+  category           category?               @relation(fields: [category_id], references: [category_id])
+  group_major        group_major?            @relation(fields: [group_id], references: [group_id])
+  studentplan        Listcoursestudentplan[]
+  listcourseregister listcourseregister[]
+}
+
+model course_in {
+  courseinstructor_id Int     @id @default(autoincrement())
+  username            String  @unique @db.VarChar(255)
+  password            String  @db.VarChar(255)
+  firstname           String  @db.VarChar(255)
+  lastname            String  @db.VarChar(255)
+  phone               String? @db.VarChar(10)
+  email               String? @db.VarChar(255)
+
+  academic_id Int
+  academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
+}
+
+model group_major {
+  group_id    Int      @id @default(autoincrement())
+  group_name  String   @db.VarChar(255)
+  group_unit  Int
+  category_id Int
+  course      course[]
+  category    category @relation(fields: [category_id], references: [category_id])
+}
+
 enum Status {
   ACTIVE
   INACTIVE
 }
 
-model Major {
-
-  id              Int      @id @default(autoincrement())  //ฟิลด์
-  majorNameTH     String
-  majorNameENG    String
-  majorYear       String
-  majorUnit       String
-  status          Status
-  majorCode       String
-  majorSupervisor String
-  categories      Category[] ///เชื่อมต่อกับ Category ผ่านฟิลด์ categories
-  courses         Course[]//เชื่อมต่อกับ Course ผ่านฟิลด์ courses
+model major {
+  major_id     Int                  @id @default(autoincrement())
+  major_code   String               @db.VarChar(255)
+  majorNameTH  String               @db.VarChar(255)
+  majorNameENG String               @db.VarChar(255)
+  majorYear    String               @db.VarChar(50)
+  majorUnit    String               @db.VarChar(50)
+  status       Status               @default(ACTIVE)
+  category     category[]
+  studentplan  studentplan[]
+  student      student[]
+  register     register[]
+  academic_id  Int
+  academic     academic_disciplines @relation(fields: [academic_id], references: [academic_id])
 }
 
-model Category {
-  id           Int      @id @default(autoincrement())
-  categoryName String
-  categoryUnit String
-  major        Major    @relation(fields: [majorId], references: [id]) //เชื่อมต่อกับ Major ผ่านฟิลด์ major
-  majorId      Int
-  groups       Group[]//เชื่อมต่อกับ Group ผ่านฟิลด์ groups
-  courses      Course[]//เชื่อมต่อกับ Course ผ่านฟิลด์ courses
+model register {
+  register_id    Int    @id @default(autoincrement())
+  student_id     String
+  studentplan_id Int
+  year           String @db.VarChar(50)
+  semester       Int
 
-}
-model Group {
-  id            Int      @id @default(autoincrement())
-  groupName     String
-  groupUnit     String
-  category      Category @relation(fields: [categoryId], references: [id])  //เชื่อมต่อกับ Category ผ่านฟิลด์ category
-  categoryId    Int
-  parentGroup   Group?   @relation("Subgroups", fields: [parentGroupId], references: [id])//เชื่อมต่อกับตัวเองผ่านฟิลด์ parentGroup และ subgroups
-  parentGroupId Int? 
-  subgroups     Group[]  @relation("Subgroups")
-  courses       Course[]//เชื่อมต่อกับ Course ผ่านฟิลด์ courses
+  major_id       Int
+  major          major                @relation(fields: [major_id], references: [major_id])
 
-  ///parentGroup: เป็นการเชื่อมโยงแบบ Many-to-One กับ Group โดยใช้ parentGroupId เป็น foreign key หมายถึงกลุ่มย่อยสามารถเชื่อมโยงกับกลุ่มหลักได้หนึ่งกลุ่ม
-  //subgroups: เป็นการเชื่อมโยงแบบ One-to-Many กับ Group ในความสัมพันธ์แบบ self-referential หมายถึงกลุ่มหนึ่งสามารถมีหลายกลุ่มย่อยได้
+  student            student              @relation(fields: [student_id], references: [student_id])
+  studentplan        studentplan          @relation(fields: [studentplan_id], references: [studentplan_id])
+  listcourseregister listcourseregister[]
 }
 
+model listcourseregister {
+  listcourseregister_id Int    @id @default(autoincrement())
+  grade                 Grade?
+  teacher_id            Int?
+  course_id             String
+  register_id           Int
+  freesubject        FreeSubject             @default(false)
 
-model Course {
-  id           Int      @id @default(autoincrement())
-  courseCode   String
-  courseNameTH String
-  courseNameENG String
-  courseYear   String
-  courseUnit   Int
-  major        Major    @relation(fields: [majorId], references: [id])//เชื่อมต่อกับ Major ผ่านฟิลด์ major
-  majorId      Int
-  category     Category @relation(fields: [categoryId], references: [id])//เชื่อมต่อกับ Category ผ่านฟิลด์ category
-  categoryId   Int
-  group        Group?   @relation(fields: [groupId], references: [id])//เชื่อมต่อกับ Group ผ่านฟิลด์ group
-  groupId      Int?
+  course   course   @relation(fields: [course_id], references: [course_id])
+  register register @relation(fields: [register_id], references: [register_id])
+  teacher  teacher? @relation(fields: [teacher_id], references: [teacher_id])
 }
 
+model section {
+  sec_id   Int    @id @default(autoincrement())
+  sec_name String @db.VarChar(255)
 
-//Major หนึ่งสามารถมีหลาย Category (One-to-Many)
-//Category หนึ่งสามารถมีหลาย Group (One-to-Many)
-//Group หนึ่งสามารถมีหลาย Subgroups (One-to-Many) และสามารถเชื่อมโยงกับ Group หลักได้หนึ่ง Group
-//Major หนึ่งสามารถมีหลาย Course (One-to-Many)
+  advisor advisor[]
+  student student[]
+
+  academic_id Int
+  academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
+}
+
+model student {
+  student_id  String     @id
+  username    String     @unique @db.VarChar(255)
+  password    String     @db.VarChar(255)
+  titlenameTh String     @db.VarChar(255)
+  firstname   String     @db.VarChar(255)
+  lastname    String     @db.VarChar(255)
+  phone       String?    @db.VarChar(10)
+  email       String?    @db.VarChar(255)
+  sec_id      Int
+
+  advisor_id  Int
+  advisor     advisor    @relation(fields: [advisor_id], references: [advisor_id])
+
+  register    register[]
+  section     section    @relation(fields: [sec_id], references: [sec_id])
+
+  academic_id Int
+  academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
+
+  major_id       Int
+  major          major                @relation(fields: [major_id], references: [major_id])
+
+  //info
+  birthdate        String?
+  monthdate        String?
+  yeardate         String?
+  titlenameEng     String?  @db.VarChar(255)
+  firstnameEng     String?
+  lastnameEng      String?
+  sector_status    String? //เป็นนักศึกษาภาค….ปกติ กศ.พป. ปริญญาตรี
+  corps            String?
+  pre_educational  String?
+  graduated_from   String?
+  pregraduatedyear String?
+  afterendcontact  String?
+  homenumber       String?
+  road             String?
+  alley            String?
+  subdistrict      String?
+  district         String?
+  province         String?
+  zipcode          String?
 
 
+  wanttoend        String?
+  yeartoend        String?
+}
 
+model studentplan {
+  studentplan_id Int                  @id @default(autoincrement())
+  year           String               @db.VarChar(50)
+  semester       Int
+  register       register[]
+
+  academic_id    Int
+  academic       academic_disciplines @relation(fields: [academic_id], references: [academic_id])
+
+  major_id       Int
+  major          major                @relation(fields: [major_id], references: [major_id])
+
+  Listcoursestudentplan Listcoursestudentplan[]
+}
+
+model Listcoursestudentplan {
+  Listcoursestudentplan_id Int    @id @default(autoincrement())
+  course_id                String
+  course                   course @relation(fields: [course_id], references: [course_id])
+
+  academic_id Int
+  academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
+
+  studentplan_id Int
+  studentplan    studentplan @relation(fields: [studentplan_id], references: [studentplan_id])
+}
+
+model teacher {
+  teacher_id Int @id @default(autoincrement())
+
+  titlename          String               @db.VarChar(255)
+  firstname          String               @db.VarChar(255)
+  lastname           String               @db.VarChar(255)
+  listcourseregister listcourseregister[]
+
+}
 

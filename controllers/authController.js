@@ -1,55 +1,75 @@
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const prisma = require("../models/prisma");
+const { PrismaClient } = require('@prisma/client');
+const jwt = require('jsonwebtoken');
+const prisma = new PrismaClient();
 
+// โหลดตัวแปรสภาพแวดล้อมจากไฟล์ .env
+require('dotenv').config();
+
+// กำหนดข้อมูลของแต่ละตารางที่ใช้ในการตรวจสอบการเข้าสู่ระบบ
+const tables = [
+  { model: 'superadmin', idField: 'superadmin_id', passwordField: 'password', },
+  { model: 'admin', idField: 'admin_id', passwordField: 'password', include: { academic: true } },
+  { model: 'course_in', idField: 'courseinstructor_id', passwordField: 'password', include: { academic: true } },
+  { model: 'advisor', idField: 'advisor_id', passwordField: 'password', include: { academic: true } },
+  { model: 'student', idField: 'student_id', passwordField: 'password', include: { academic: true } }
+];
+
+// ฟังก์ชันค้นหาผู้ใช้ในตารางที่กำหนดโดยใช้ชื่อผู้ใช้
+const findUser = async (model, username, include) => {
+  return await prisma[model].findUnique({
+    where: { username },
+    include: include
+
+  });
+};
+
+// ฟังก์ชันการเข้าสู่ระบบ
 exports.login = async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { username },
-      include: { studentInfo: { include: { studentPlan: true } } } // ดึงข้อมูล StudentInfo และ StudentPlan
-    });
+    // ตรวจสอบผู้ใช้ในแต่ละตารางตามลำดับ
+    for (const table of tables) {
+      // ค้นหาผู้ใช้จากตารางที่กำหนด
+      
+      let user = await findUser(table.model, username, table.include);
+    
+      // ตรวจสอบรหัสผ่านของผู้ใช้
+      if (user && user[table.passwordField] === password) {
+        // กำหนดบทบาทของผู้ใช้ตามตารางที่พบ
+        let role;
+        if (table.model === 'superadmin') role = 'superadmin';
+        else if(table.model === 'admin') role = 'admin';
+        else if (table.model === 'advisor') role = 'advisor';
+        else if (table.model === 'course_in') role = 'course_in';
+        else if (table.model === 'student') role = 'student';
 
-    if (!user) {
-      return res.status(401).json({ message: "Invalid username or password" });
+        // สร้าง JWT พร้อมข้อมูลของผู้ใช้
+        const token = jwt.sign(
+          {
+            id: user[table.idField],         // ID 
+            username: user.username,         // ชื่อผู้ใช้
+            firstname: user.firstname,       // ชื่อจริงของผู้ใช้
+            lastname: user.lastname,         // นามสกุลของผู้ใช้
+
+            role: role,                       // บทบาทของผู้ใช้
+            academic: user.academic          // ข้อมูล academic ของผู้ใช้
+
+          },
+          process.env.JWT_SECRET,            // สำหรับการเข้ารหัส JWT
+          { expiresIn: '1h' }                // เวลาในการหมดอายุของ token
+        );
+
+        // ลบข้อมูลรหัสผ่านออกจากข้อมูลผู้ใช้ก่อนส่งกลับ
+        const { [table.passwordField]: _, ...userData } = user;
+        return res.status(200).json({ message: 'Login successful', token });
+      }
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    // ถ้าผู้ใช้ไม่พบในตารางใดๆ
+    return res.status(404).json({ message: 'User not found' });
 
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid username or password" });
-    }
-
-
-    const payload = {
-      id: user.id,
-      role: user.role,
-      name: user.name,
-      username: user.username,
-    };
-
-    if (user.role === 'STUDENT' && user.studentInfo) {
-      payload.studentInfo = {
-        id: user.studentInfo.id,
-        studentIdcard: user.studentInfo.studentIdcard,
-        year: user.studentInfo.year,
-        room: user.studentInfo.room,
-        studentPlan: user.studentInfo.studentPlan ? {
-          id: user.studentInfo.studentPlan.id,
-          studentPlanName: user.studentInfo.studentPlan.studentPlanName,
-          studentPlanYear: user.studentInfo.studentPlan.studentPlanYear,
-          courseId: user.studentInfo.studentPlan.courseId
-        } : null
-      };
-    }
-
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
-
-  
-    res.json({ token });
   } catch (error) {
-    console.error("Error during login:", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ message: 'Server error', error });
   }
 };
