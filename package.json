@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-  "prisma:generate": "prisma generate",
   "migrate": "prisma migrate deploy",
-  "start": "npm run prisma:generate && npm run migrate && node index.js",
+  "start": "npm run migrate && node index.js",
   "dev": "nodemon index.js"
 },
   "author": "",
