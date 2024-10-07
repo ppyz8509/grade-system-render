@@ -4,7 +4,7 @@ require('dotenv').config();
 const express = require("express");
 const cors = require("cors");
 const connectDb = require('./models/prisma');
-
+const port = process.env.PORT || 5000;
 const authRouter = require("./routers/authRouter");
 const course_in_Router = require("./routers/course_in_Router");
 const majorRouter = require("./routers/majorRouter");
@@ -32,6 +32,10 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.get("/", (req, res) => {
+    res.send("connected to backend");    
+});
+
 
 // Combine Routers
 app.use("/api", authRouter);
@@ -48,7 +52,7 @@ app.use('/api', section);
 
 
 
-app.listen (3000,async () => {
+app.listen (port,async () => {
     await connectDb();
-    console.log("Server is running on port 3000");
+    console.log(`Server is running on port ${port}`);
 });
