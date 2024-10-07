@@ -64,6 +64,7 @@ model admin {
 
 model advisor {
   advisor_id Int     @id @default(autoincrement())
+  titlename          String               @db.VarChar(255)
   username   String  @unique @db.VarChar(255)
   password   String  @db.VarChar(255)
   firstname  String  @db.VarChar(255)
@@ -72,9 +73,9 @@ model advisor {
   phone      String? @db.VarChar(50)
   email      String? @db.VarChar(255)
   section    section @relation(fields: [sec_id], references: [sec_id])
-
   academic_id Int
   academic    academic_disciplines @relation(fields: [academic_id], references: [academic_id])
+  student    student[]
 }
 
 model category {
@@ -97,7 +98,8 @@ model course {
   categoryResearch   Int?
   category_id        Int
   group_id           Int
-  freesubject        FreeSubject             @default(false)
+
+
   category           category?               @relation(fields: [category_id], references: [category_id])
   group_major        group_major?            @relation(fields: [group_id], references: [group_id])
   studentplan        Listcoursestudentplan[]
@@ -168,6 +170,7 @@ model listcourseregister {
   teacher_id            Int?
   course_id             String
   register_id           Int
+  freesubject        FreeSubject             @default(false)
 
   course   course   @relation(fields: [course_id], references: [course_id])
   register register @relation(fields: [register_id], references: [register_id])
@@ -195,6 +198,10 @@ model student {
   phone       String?    @db.VarChar(10)
   email       String?    @db.VarChar(255)
   sec_id      Int
+
+  advisor_id  Int
+  advisor     advisor    @relation(fields: [advisor_id], references: [advisor_id])
+
   register    register[]
   section     section    @relation(fields: [sec_id], references: [sec_id])
 
@@ -224,7 +231,8 @@ model student {
   district         String?
   province         String?
   zipcode          String?
-  advisor          String?
+
+
   wanttoend        String?
   yeartoend        String?
 }
@@ -263,4 +271,6 @@ model teacher {
   firstname          String               @db.VarChar(255)
   lastname           String               @db.VarChar(255)
   listcourseregister listcourseregister[]
+
 }
+

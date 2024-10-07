@@ -14,6 +14,13 @@ exports.createAdmin = async (req, res) => {
     if (existingAdmin) {
       return res.status(409).json({ message: 'Username already exists' });
     }
+    if (phone ) {
+      if (phone.length > 10) {
+        return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
+      }
+    }
+
+
 
     const admin = await prisma.admin.create({
       data: {
@@ -24,7 +31,13 @@ exports.createAdmin = async (req, res) => {
         phone,
         email,
         academic_id
-      },
+      },include:{
+        academic:{
+          select:{
+            academic_name:true
+          }
+        }
+      }
     });
     res.status(201).json(admin);
   } catch (error) {
@@ -94,7 +107,9 @@ exports.updateAdmin = async (req, res) => {
     if (isNaN(admin_id)) { 
       return res.status(400).json({ message: 'ID is not number' });
     }
-
+    if (phone.length > 10) {
+      return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
+    }
     const adminExists = await prisma.admin.findUnique({
       where: { admin_id: Number(admin_id) },
     });

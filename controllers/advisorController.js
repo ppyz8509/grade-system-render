@@ -13,11 +13,16 @@ const getUserFromToken = (token) => {
 };
 exports.createAdvisor = async (req, res) => {
   try {
-    const { username, password, firstname, lastname, phone, email, sec_id } = req.body;
+    const {titlename, username, password, firstname, lastname, phone, email, sec_id } = req.body;
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
-    if (!username || !password || !firstname || !lastname || !sec_id) {
+    if (!username || !titlename || !password || !firstname || !lastname || !sec_id) {
       return res.status(400).json({ message: 'Missing required fields' });
+    }
+    if (phone ) {
+      if (phone.length > 10) {
+        return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
+      }
     }
     const existingAdvisor = await prisma.advisor.findUnique({ where: { username } });
     if (existingAdvisor) {
@@ -34,6 +39,7 @@ exports.createAdvisor = async (req, res) => {
 
     const advisor = await prisma.advisor.create({
       data: {
+        titlename,
         username,
         password,
         firstname,
@@ -88,10 +94,15 @@ exports.getAdvisorById = async (req, res) => {
 exports.updateAdvisor = async (req, res) => {
   try {
     const { advisor_id } = req.params;
-    const { username, password, firstname, lastname, phone, email, sec_id } = req.body;
+    const {titlename, username, password, firstname, lastname, phone, email, sec_id } = req.body;
 
     if (isNaN(advisor_id)) {
       return res.status(400).json({ message: 'ID is not number' });
+    }
+    if (phone ) {
+      if (phone.length > 10) {
+        return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
+      }
     }
     const AdvisorInExists = await prisma.advisor.findUnique({
       where: { advisor_id: Number(advisor_id) },
@@ -104,6 +115,7 @@ exports.updateAdvisor = async (req, res) => {
     const advisor = await prisma.advisor.update({
       where: { advisor_id: Number(advisor_id) },
       data: {
+        titlename,
         username,
         password,
         firstname,

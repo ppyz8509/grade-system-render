@@ -1,4 +1,6 @@
+
 require('dotenv').config();
+
 const express = require("express");
 const cors = require("cors");
 const connectDb = require('./models/prisma');
@@ -43,6 +45,7 @@ app.use('/api', registerRouter);
 app.use('/api', studentplanRouter);
 app.use('/api', advisor);
 app.use('/api', section);
+
 
 
 app.listen (3000,async () => {

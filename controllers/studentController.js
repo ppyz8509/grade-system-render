@@ -16,10 +16,15 @@ const getUserFromToken = (token) => {
 // Create a Student
 exports.createStudent = async (req, res) => {
   try {
-    const { student_id, username, password, firstname, lastname, phone, email, sec_id } = req.body;
+    const {major_id,student_id, username, password, firstname, lastname, phone, email, sec_id,titlenameTh } = req.body;
     const token = req.header('Authorization')?.replace('Bearer ', '');
     if (!student_id || !username || !password || !firstname || !lastname || !sec_id) {
       return res.status(400).json({ message: 'Missing required fields' });
+    }
+    if (phone ) {
+      if (phone.length > 10) {
+        return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
+      }
     }
 
     const existingstudent = await prisma.student.findUnique({ where: { student_id , username } });
@@ -40,11 +45,14 @@ exports.createStudent = async (req, res) => {
         student_id,
         username,
         password,
+        titlenameTh,
         firstname,
         lastname,
         phone,
         email,
         sec_id,
+        major_id,
+        advisor_id: user.id,
         academic_id: user.academic.academic_id,
       },
     });
@@ -57,7 +65,18 @@ exports.createStudent = async (req, res) => {
 // Read all Students
 exports.getStudents = async (req, res) => {
   try {
-    const students = await prisma.student.findMany();
+    const students = await prisma.student.findMany(
+      {   include: {
+        advisor: {
+          select: {
+            titlename: true,
+            firstname: true,
+            lastname: true,
+          }
+        }
+      }
+}
+    );
     if (students.length === 0) {
       return res.status(404).json({ message: 'students have no' });
     }
@@ -66,6 +85,39 @@ exports.getStudents = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+
+exports.getStudentforCheck = async (req, res) => {
+  try {
+    const { student_id } = req.params;
+
+    if (isNaN(student_id)) {
+      return res.status(400).json({ message: 'ID is not number' });
+    }
+    const student = await prisma.student.findUnique({
+      where: { student_id: String(student_id) },
+      include: {
+        major: true,
+        advisor: {
+          select: {
+            titlename: true,
+            firstname: true,
+            lastname: true,
+          }
+        }
+      }
+    });
+
+    if (!student) {
+      return res.status(404).json({ message: 'student not found' });
+    } 
+    
+    return res.status(200).json(student);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 
 // Read a Single Student
 exports.getStudentById = async (req, res) => {
@@ -76,7 +128,17 @@ exports.getStudentById = async (req, res) => {
       return res.status(400).json({ message: 'ID is not number' });
     }
     const student = await prisma.student.findUnique({
-      where: { student_id: String(student_id) },
+      where: { student_id: String(student_id)
+      }, include:{
+          
+        advisor: {
+          select: {
+            titlename: true,
+            firstname: true,
+            lastname: true,
+          }
+        }
+      }
     });
 
     if (!student) {
@@ -92,16 +154,54 @@ exports.getStudentById = async (req, res) => {
 exports.updateStudent = async (req, res) => {
   try {
     const { student_id } = req.params;
-    const { username, password, firstname, lastname, phone, email, sec_id } = req.body;
+    const {        
+      username,
+      password,
+      firstname,
+      lastname,
+      titlenameTh,
+      phone,
+      email,
+      birthdate,
+      monthdate,
+      yeardate,
+      titlenameEng,
+      firstnameEng,
+      lastnameEng,
+      sector_status,
+      sec_id,
+      corps,
+      pre_educational,
+      graduated_from,
+      pregraduatedyear,
+      afterendcontact,
+      homenumber,
+      road,
+      alley,
+      subdistrict,
+      district,
+      province,
+      zipcode,
+      advisor,
+      wanttoend,
+      yeartoend,
+    } = req.body;
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
 
     if (isNaN(student_id)) {
       return res.status(400).json({ message: 'ID is not number' });
     }
+    if (phone ) {
+      if (phone.length > 10) {
+        return res.status(403).json({ message: 'Phone Do not exceed 10 characters.' }); 
+      }
+    }
 
     const user = getUserFromToken(token);
     if (!user || !user.academic) {
+      console.log(user);
+
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
@@ -110,6 +210,8 @@ exports.updateStudent = async (req, res) => {
     });
 
     if (!studentExists) {
+      console.log(studentExists);
+      
       return res.status(404).json({ message: 'student not found' });
     }
 
@@ -120,13 +222,36 @@ exports.updateStudent = async (req, res) => {
     const student = await prisma.student.update({
       where: { student_id: String(student_id) },
       data: {
-        username,
-        password,
-        firstname,
-        lastname,
-        phone,
-        email,
-        sec_id,
+      username,
+      password,
+      firstname,
+      lastname,
+      titlenameTh,
+      phone,
+      email,
+      birthdate,
+      monthdate,
+      yeardate,
+      titlenameEng,
+      firstnameEng,
+      lastnameEng,
+      sector_status,
+      sec_id,
+      corps,
+      pre_educational,
+      graduated_from,
+      pregraduatedyear,
+      afterendcontact,
+      homenumber,
+      road,
+      alley,
+      subdistrict,
+      district,
+      province,
+      zipcode,
+      advisor,
+      wanttoend,
+      yeartoend,
       },
     });
     res.status(200).json(student);

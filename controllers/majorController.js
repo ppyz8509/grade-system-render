@@ -15,7 +15,9 @@ const getUserFromToken = (token) => {
 exports.createMajor = async (req, res) => {
   try {
     const { major_code, majorNameTH, majorNameENG, majorYear, majorUnit, status } = req.body;
+
     const token = req.header('Authorization')?.replace('Bearer ', '');
+
 
     // ตรวจสอบว่ามีข้อมูลทุกช่องที่จำเป็นหรือไม่
     if (!major_code || !majorNameTH || !majorNameENG || !majorYear || !majorUnit) {
@@ -30,12 +32,14 @@ exports.createMajor = async (req, res) => {
     if (existingMajor) {
       return res.status(409).json({ error: 'Major code already exists' });
     }
+
     const user = getUserFromToken(token);
     console.log(user);
 
     if (!user || !user.academic) {
       return res.status(403).json({ message: 'Unauthorized' });
     }
+
     // สร้าง major ใหม่
     const newMajor = await prisma.major.create({
       data: {
@@ -44,8 +48,10 @@ exports.createMajor = async (req, res) => {
         majorNameENG,
         majorYear,
         majorUnit,
+
         status,
         academic_id: user.academic.academic_id,
+
       }
     });
 
@@ -62,12 +68,13 @@ exports.createMajor = async (req, res) => {
   }
 };
 exports.getAllMajors = async (req, res) => {
+
   try {
     const majors = await prisma.major.findMany();
-
     if (!majors || majors.length === 0) {
       return res.status(404).json({ error: 'No majors found' });
     }
+
 
     res.status(200).json(majors);
   } catch (error) {
@@ -146,7 +153,9 @@ exports.deleteMajor = async (req, res) => {
       return res.status(400).json({ error: 'Invalid or missing major_id' });
     }
 
-    // Check if the Major exists
+
+    // ตรวจสอบว่า Major มีอยู่จริงหรือไม่
+
     const major = await prisma.major.findUnique({
       where: { major_id: parseInt(major_id, 10) },
     });
@@ -154,6 +163,7 @@ exports.deleteMajor = async (req, res) => {
     if (!major) {
       return res.status(404).json({ error: 'Major not found' });
     }
+
 
     // Find related categories
     const categories = await prisma.category.findMany({
@@ -188,6 +198,7 @@ exports.deleteMajor = async (req, res) => {
       where: { major_id: parseInt(major_id, 10) },
     });
 
+
     // Delete the major
     await prisma.major.delete({
       where: { major_id: parseInt(major_id, 10) },
@@ -199,6 +210,7 @@ exports.deleteMajor = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 
 
 // Category
@@ -220,7 +232,9 @@ exports.createCategory = async (req, res) => {
       return res.status(400).json({ error: 'Invalid major_id: No matching major found' });
     }
 
+
     // สร้าง Category ใหม่ โดยระบบจะจัดการการสร้าง ID ใหม่ให้เอง
+
     const newCategory = await prisma.category.create({
       data: {
         category_name,
@@ -282,7 +296,9 @@ exports.updateCategory = async (req, res) => {
     }
 
     // ตรวจสอบว่ามีข้อมูลครบทุกช่องที่จำเป็นหรือไม่
+
     if (!category_name || !category_unit ) {
+
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -326,13 +342,13 @@ exports.deleteCategory = async (req, res) => {
           category_id: categoryId
         }
       }
+
     });
 
     // ลบ GroupMajor ที่เชื่อมต่อกับ Category
     await prisma.group_major.deleteMany({
       where: { category_id: categoryId }
     });
-
     // ลบ Category
     await prisma.category.delete({
       where: { category_id: categoryId }
@@ -346,6 +362,7 @@ exports.deleteCategory = async (req, res) => {
 };
 
 
+
 // Group Major
 exports.createGroupMajor = async (req, res) => {
   try {
@@ -353,33 +370,38 @@ exports.createGroupMajor = async (req, res) => {
 
     // ตรวจสอบว่าข้อมูลที่จำเป็นถูกส่งเข้ามาครบหรือไม่
     if (!group_name || !group_unit || !category_id) {
+
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
     // ตรวจสอบว่า category_id มีอยู่จริงหรือไม่
     const categoryExists = await prisma.category.findUnique({
+
       where: { category_id: parseInt(category_id) },
     });
-
     if (!categoryExists) {
       return res.status(400).json({ error: 'Invalid category_id: No matching category found' });
     }
+
 
     // สร้าง Group Major ใหม่ โดยระบบจะจัดการการสร้าง ID ใหม่ให้เอง
     const newGroupMajor = await prisma.group_major.create({
       data: {
         group_name,
         group_unit,
+
         category_id: parseInt(category_id),
       },
     });
 
     res.status(201).json(newGroupMajor);
   } catch (error) {
+
     console.error('Error creating group major:', error); // แสดงข้อผิดพลาดที่เกิดขึ้นจริง
     res.status(500).json({ error: 'An error occurred while creating the group major', details: error.message });
   } finally {
     await prisma.$disconnect();
+
   }
 };
 exports.getAllGroupMajors = async (req, res) => {
@@ -423,6 +445,7 @@ exports.getGroupMajorById = async (req, res) => {
 exports.updateGroupMajor = async (req, res) => {
   try {
     const { id } = req.params;
+
     const { group_name, group_unit } = req.body;
 
     // ตรวจสอบว่า id ที่ส่งเข้ามาเป็นตัวเลขหรือไม่
@@ -435,7 +458,6 @@ exports.updateGroupMajor = async (req, res) => {
     if (!group_name || !group_unit) {
       return res.status(400).json({ error: 'Missing required fields: group_name or group_unit' });
     }
-
     // อัปเดต Group Major
     const updatedGroupMajor = await prisma.group_major.update({
       where: { group_id: groupId },
@@ -487,6 +509,7 @@ exports.deleteGroupMajor = async (req, res) => {
   }
 };
 
+
 // Course
 exports.createCourse = async (req, res) => {
   const {
@@ -502,6 +525,8 @@ exports.createCourse = async (req, res) => {
     freesubject
   } = req.body;
 
+// Course
+exports.createCourse = async (req, res) => {
   try {
     // Validate input data
     if (!course_id || !courseNameTH || !courseNameENG || !category_id || !group_id) {
@@ -509,6 +534,7 @@ exports.createCourse = async (req, res) => {
     }
 
     // Create a new course
+
     const newCourse = await prisma.course.create({
       data: {
         course_id,
@@ -633,6 +659,7 @@ exports.deleteCourse = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while deleting the course' });
   }
 };
+
 
 
 // Get courses by category_id

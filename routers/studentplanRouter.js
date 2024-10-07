@@ -2,25 +2,32 @@ const express = require('express');
 const router = express.Router();
 const {
   createStudentPlan,
+  createListStudentplan,
   getStudentPlans,
   updateStudentPlan,
   deleteStudentPlan,
-  getStudentplanBySec,
+  getStudentplanByAcademic,
+  deleteListStudentplan,
+  getStudentplanById
   
 } = require('../controllers/studentplanController');
+const { authenticateToken, isAdmin, isAdvisor }  = require("../middlewares/authorize");
 
 // Create a Student Plan
 router.post('/createStudentPlan', createStudentPlan);
+router.post('/createListStudentplan/:studentplan_id', createListStudentplan);
+router.get('/getStudentplanById/:studentplan_id', getStudentplanById);
 
 // Read all Student Plans
 router.get('/getStudentPlans', getStudentPlans);
-router.get('/getStudentplanBySec/:sec_id', getStudentplanBySec);
+router.get('/getStudentplanByAcademic', getStudentplanByAcademic);
 
 
 // Update a Student Plan
-router.put('/updateStudentPlan/:studentplan_id', updateStudentPlan);
+router.put('/updateStudentPlan/:studentplan_id',authenticateToken,isAdvisor, updateStudentPlan);
 
 // Delete a Student Plan
 router.delete('/deleteStudentPlan/:studentplan_id', deleteStudentPlan);
+router.delete('/deleteListStudentplan/:Listcoursestudentplan_id', deleteListStudentplan);
 
 module.exports = router;
