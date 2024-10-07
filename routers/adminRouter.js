@@ -7,7 +7,7 @@ const {
     updateAdmin,
     deleteAdmin,
 } = require("../controllers/adminController");
-const { authenticateToken }  = require("../middlewares/authorize");
+const { authenticateToken ,isSuperAdmin}  = require("../middlewares/authorize");
 
 // Apply authentication middleware to all admin routes
 router.post("/createAdmin", createAdmin);

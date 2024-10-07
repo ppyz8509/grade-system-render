@@ -1,22 +1,27 @@
-const dotenv = require("dotenv");
+
+require('dotenv').config();
+
 const express = require("express");
 const cors = require("cors");
+const connectDb = require('./models/prisma');
+
 const authRouter = require("./routers/authRouter");
 const course_in_Router = require("./routers/course_in_Router");
 const majorRouter = require("./routers/majorRouter");
-const amdinRouter = require("./routers/adminRouter");
+const adminRouter = require("./routers/adminRouter");
 const studentRouter = require('./routers/studentRouter');
 const teacherRouter = require('./routers/teacherRouter');
 const registerRouter = require('./routers/registerRouter');
 const studentplanRouter = require('./routers/studentplanRouter');
+const superadminRouter = require('./routers/superadminRouter');
 const advisor = require('./routers/advisorRouter');
 const section = require('./routers/sectionRouter')
 
 
-dotenv.config();
 
 
 const app = express();
+
 
 // CORS configuration
 app.use(cors({
@@ -32,7 +37,8 @@ app.use(express.json());
 app.use("/api", authRouter);
 app.use("/api", majorRouter);
 app.use("/api", course_in_Router);
-app.use("/api", amdinRouter);
+app.use("/api", adminRouter);
+app.use("/api", superadminRouter);
 app.use('/api', studentRouter);
 app.use('/api', teacherRouter);
 app.use('/api', registerRouter);
@@ -41,6 +47,8 @@ app.use('/api', advisor);
 app.use('/api', section);
 
 
-app.listen(3000, () => {
-    console.log("Server running on port 3000");
+
+app.listen (3000,async () => {
+    await connectDb();
+    console.log("Server is running on port 3000");
 });

@@ -1,4 +1,6 @@
+
 const { PrismaClient } = require('@prisma/client');
+
 const jwt = require('jsonwebtoken');
 const prisma = new PrismaClient();
 
@@ -13,6 +15,14 @@ const authenticateToken = (req, res, next) => {
     req.user = user; // Attach user info to request object
     next();
   });
+};
+
+// Middleware to check if user is admin
+const isSuperAdmin = (req, res, next) => {
+  if (req.user.role !== 'superadmin') {
+    return res.status(403).json({ message: 'Access forbidden: Admins only' });
+  }
+  next();
 };
 
 // Middleware to check if user is admin
@@ -39,8 +49,8 @@ const isAdvisor = (req, res, next) => {
 
 module.exports = { 
   authenticateToken, 
+  isSuperAdmin,
   isAdmin,
   isCourse_in,
   isAdvisor
-
 };

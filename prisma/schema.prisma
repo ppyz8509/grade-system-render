@@ -99,6 +99,7 @@ model course {
   category_id        Int
   group_id           Int
 
+
   category           category?               @relation(fields: [category_id], references: [category_id])
   group_major        group_major?            @relation(fields: [group_id], references: [group_id])
   studentplan        Listcoursestudentplan[]
@@ -170,6 +171,7 @@ model listcourseregister {
   course_id             String
   register_id           Int
   freesubject        FreeSubject             @default(false)
+
   course   course   @relation(fields: [course_id], references: [course_id])
   register register @relation(fields: [register_id], references: [register_id])
   teacher  teacher? @relation(fields: [teacher_id], references: [teacher_id])
@@ -196,8 +198,10 @@ model student {
   phone       String?    @db.VarChar(10)
   email       String?    @db.VarChar(255)
   sec_id      Int
+
   advisor_id  Int
   advisor     advisor    @relation(fields: [advisor_id], references: [advisor_id])
+
   register    register[]
   section     section    @relation(fields: [sec_id], references: [sec_id])
 
@@ -227,6 +231,8 @@ model student {
   district         String?
   province         String?
   zipcode          String?
+
+
   wanttoend        String?
   yeartoend        String?
 }
@@ -265,4 +271,6 @@ model teacher {
   firstname          String               @db.VarChar(255)
   lastname           String               @db.VarChar(255)
   listcourseregister listcourseregister[]
+
 }
+
