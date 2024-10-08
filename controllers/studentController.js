@@ -277,7 +277,7 @@ exports.deleteStudent = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
-    // ตรวจสอบว่ามีนักเรียนที่ต้องการลบหรือไม่
+    // ตรวจสอบว่านักเรียนที่ต้องการลบมีอยู่หรือไม่
     const studentExists = await prisma.student.findUnique({
       where: { student_id: String(student_id) },
     });
@@ -291,12 +291,23 @@ exports.deleteStudent = async (req, res) => {
       return res.status(403).json({ message: 'Permission denied: Academic ID mismatch' });
     }
 
-    // ลบข้อมูลที่เกี่ยวข้องในตาราง register ก่อน
+    // ลบข้อมูลที่เกี่ยวข้องกับ student ใน listcourseregister -> register -> student
+
+    // 1. ลบข้อมูลใน listcourseregister ที่อ้างอิงถึง register ของ student นี้
+    await prisma.listcourseregister.deleteMany({
+      where: {
+        register: {
+          student_id: String(student_id)
+        }
+      }
+    });
+
+    // 2. ลบข้อมูลใน register ที่อ้างอิงถึง student นี้
     await prisma.register.deleteMany({
       where: { student_id: String(student_id) },
     });
 
-    // ลบนักเรียน
+    // 3. ลบนักเรียน
     const student = await prisma.student.delete({
       where: { student_id: String(student_id) },
     });
