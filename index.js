@@ -21,7 +21,7 @@ const app = express();
 
 // CORS configuration
 app.use(cors({
-    origin: 'https://graduation-verification-system-iota.vercel.app/',
+    origin: 'https://graduation-verification-system-iota.vercel.app',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
