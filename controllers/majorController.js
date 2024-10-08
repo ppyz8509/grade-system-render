@@ -535,13 +535,26 @@ exports.deleteGroupMajor = async (req, res) => {
 // Course
 exports.createCourse = async (req, res) => {
   try {
+    // ดึงข้อมูลจาก req.body
+    const {
+      course_id,
+      courseNameTH,
+      courseNameENG,
+      courseUnit,
+      courseTheory,
+      coursePractice,
+      categoryResearch,
+      category_id,
+      group_id,
+      freesubject
+    } = req.body;
+
     // Validate input data
     if (!course_id || !courseNameTH || !courseNameENG || !category_id || !group_id) {
       return res.status(400).json({ error: 'Required fields are missing' });
     }
 
     // Create a new course
-
     const newCourse = await prisma.course.create({
       data: {
         course_id,
@@ -557,7 +570,7 @@ exports.createCourse = async (req, res) => {
       }
     });
 
-    // Respond with the created course
+    // ตอบกลับด้วยข้อมูลของ course ที่สร้างสำเร็จ
     res.status(201).json(newCourse);
   } catch (error) {
     // Handle different types of errors
@@ -567,15 +580,13 @@ exports.createCourse = async (req, res) => {
     } else if (error.code === 'P2003') {
       // Foreign key constraint failed
       res.status(400).json({ error: 'Invalid category or group ID' });
-    } else if (error.message.includes('Validation error')) {
-      // Handle validation errors
-      res.status(400).json({ error: 'Invalid input data' });
     } else {
-      // Generic server error
-      res.status(500).json({ error: 'Internal server error' });
+      // แสดงรายละเอียดข้อผิดพลาดเพื่อการดีบัก
+      res.status(500).json({ error: 'Internal server error', details: error.message });
     }
   }
 };
+
 exports.getAllCourses = async (req, res) => {
   try {
     const courses = await prisma.course.findMany();
