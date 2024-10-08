@@ -273,6 +273,11 @@ exports.deleteStudent = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
+    await prisma.register.delete({ 
+      where: { student_id: String(student_id) },}
+     
+
+    )
     const studentExists = await prisma.student.findUnique({
       where: { student_id: String(student_id) },
     });
