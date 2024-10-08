@@ -265,40 +265,49 @@ exports.deleteStudent = async (req, res) => {
   try {
     const { student_id } = req.params;
     const token = req.header('Authorization')?.replace('Bearer ', '');
+
+    // ตรวจสอบว่า student_id เป็นตัวเลขหรือไม่
     if (isNaN(student_id)) {
       return res.status(400).json({ message: 'ID is not number' });
     }
+
+    // ดึงข้อมูล user จาก token
     const user = getUserFromToken(token);
     if (!user || !user.academic) {
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
-    await prisma.register.delete({ 
-      where: { student_id: String(student_id) },}
-     
-
-    )
+    // ตรวจสอบว่ามีนักเรียนที่ต้องการลบหรือไม่
     const studentExists = await prisma.student.findUnique({
       where: { student_id: String(student_id) },
     });
 
     if (!studentExists) {
-      return res.status(404).json({ message: 'student not found' });
+      return res.status(404).json({ message: 'Student not found' });
     }
 
+    // ตรวจสอบสิทธิ์ในการลบ (Academic ID ต้องตรงกัน)
     if (studentExists.academic_id !== user.academic.academic_id) {
       return res.status(403).json({ message: 'Permission denied: Academic ID mismatch' });
     }
 
-    
+    // ลบข้อมูลที่เกี่ยวข้องในตาราง register ก่อน
+    await prisma.register.deleteMany({
+      where: { student_id: String(student_id) },
+    });
+
+    // ลบนักเรียน
     const student = await prisma.student.delete({
       where: { student_id: String(student_id) },
     });
+
+    // ส่ง response กลับเมื่อการลบสำเร็จ
     res.status(200).json(student);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 exports.updateStudentInfo = async (req, res) => {
   try {
