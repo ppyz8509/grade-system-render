@@ -17,15 +17,11 @@ const superadminRouter = require('./routers/superadminRouter');
 const advisor = require('./routers/advisorRouter');
 const section = require('./routers/sectionRouter')
 
-
-
-
 const app = express();
-
 
 // CORS configuration
 app.use(cors({
-    origin: 'https://main-project-git-deploy-titadachffs-projects.vercel.app',
+    origin: 'https://graduation-verification-system-iota.vercel.app/',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -35,7 +31,6 @@ app.use(express.json());
 app.get("/", (req, res) => {
     res.send("connected to backend");    
 });
-
 
 // Combine Routers
 app.use("/api", authRouter);
