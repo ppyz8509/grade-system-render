@@ -27,6 +27,13 @@ app.use(cors({
     credentials: true,
 }));
 
+app.use(cors({
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+}));
+
 app.use(express.json());
 app.get("/", (req, res) => {
     res.send("connected to backend");    
