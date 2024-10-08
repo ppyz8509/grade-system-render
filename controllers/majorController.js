@@ -40,7 +40,7 @@ exports.createMajor = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
-    // สร้าง major ใหม่
+
     const newMajor = await prisma.major.create({
       data: {
         major_code,
@@ -101,6 +101,28 @@ exports.getMajorByCode = async (req, res) => {
     res.status(200).json(major);
   } catch (error) {
     console.error('Error fetching major by code:', error);
+    res.status(500).json({ error: 'An error occurred while fetching the major' });
+  }
+};
+exports.getMajorById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id || isNaN(parseInt(id, 10))) {
+      return res.status(400).json({ error: 'Invalid or missing major_id' });
+    }
+
+    const major = await prisma.major.findUnique({
+      where: { major_id: parseInt(id, 10) }
+    });
+
+    if (!major) {
+      return res.status(404).json({ error: 'Major not found' });
+    }
+
+    res.status(200).json(major);
+  } catch (error) {
+    console.error('Error fetching major by ID:', error);
     res.status(500).json({ error: 'An error occurred while fetching the major' });
   }
 };

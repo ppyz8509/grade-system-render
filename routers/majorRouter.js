@@ -7,6 +7,7 @@ const { authenticateToken, isAdmin, isCourse_in }  = require("../middlewares/aut
 router.post("/createMajor",authenticateToken,isCourse_in, majorController.createMajor);
 router.get("/getMajorByCode/:major_code", majorController.getMajorByCode);
 router.get("/getAllMajors/",majorController.getAllMajors);
+router.get("/getMajorById/:id", majorController.getMajorById);
 router.put("/updateMajor/:id", authenticateToken,isCourse_in,majorController.updateMajor);
 router.delete("/deleteMajor/:major_id",authenticateToken,isCourse_in,majorController.deleteMajor);
 
